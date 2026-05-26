@@ -7,9 +7,11 @@ import Rightsidebar from "./Rightsidebar";
 import Feed from "../ui/Feed";
 import Profile from "../ui/Profile";
 import LoadingSpinner from "../ui/loading-spinner";
+import { useTranslation } from "@/lib/i18n";
 
 export default function Mainlayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState("home");
 
   // Splash Loading Screen
@@ -55,12 +57,14 @@ export default function Mainlayout({ children }: { children: React.ReactNode }) 
           {["explore", "notifications", "messages", "bookmarks"].includes(currentPage) && (
             <div className="min-h-screen">
               <header className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-zinc-800 z-10 px-4 py-3">
-                <h1 className="text-xl font-bold tracking-tight capitalize">{currentPage}</h1>
+                <h1 className="text-xl font-bold tracking-tight capitalize">
+                  {currentPage === "notifications" ? t("notifications") : currentPage}
+                </h1>
               </header>
               <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-3 select-none">
-                <h2 className="text-lg font-bold text-white tracking-tight">Explore the X universe</h2>
+                <h2 className="text-lg font-bold text-white tracking-tight">{t("explore_universe")}</h2>
                 <p className="text-zinc-500 text-sm max-w-xs font-normal">
-                  This page's interactive modules will be fully loaded in the next updates. Try the Feed or Profile!
+                  {t("explore_desc")}
                 </p>
               </div>
             </div>

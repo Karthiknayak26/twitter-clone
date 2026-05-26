@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
 
 export const translations = {
   English: {
@@ -30,6 +31,15 @@ export const translations = {
     forgot_password: "Forgot Password?",
     password_recovery: "Password Recovery",
     back_to_login: "Back to Login",
+    // Landing & Other pages
+    happening_now: "Happening now",
+    join_today: "Join today.",
+    sign_up_google: "Sign up with Google",
+    sign_up_apple: "Sign up with Apple",
+    create_account: "Create account",
+    sign_in: "Sign in",
+    explore_universe: "Explore the X universe",
+    explore_desc: "This page's interactive modules will be fully loaded in the next updates. Try the Feed or Profile!",
   },
   Spanish: {
     home: "Inicio",
@@ -60,6 +70,15 @@ export const translations = {
     forgot_password: "¿Olvidó su contraseña?",
     password_recovery: "Recuperación de contraseña",
     back_to_login: "Volver a iniciar sesión",
+    // Landing & Other pages
+    happening_now: "Pasando ahora",
+    join_today: "Únete hoy.",
+    sign_up_google: "Registrarse con Google",
+    sign_up_apple: "Registrarse con Apple",
+    create_account: "Crear cuenta",
+    sign_in: "Iniciar sesión",
+    explore_universe: "Explora el universo X",
+    explore_desc: "Los módulos interactivos de esta página se cargarán por completo en las próximas actualizaciones. ¡Prueba el Feed o el Perfil!",
   },
   Hindi: {
     home: "मुख्य पृष्ठ",
@@ -90,6 +109,15 @@ export const translations = {
     forgot_password: "पासवर्ड भूल गए?",
     password_recovery: "पासवर्ड रिकवरी",
     back_to_login: "लॉगिन पर लौटें",
+    // Landing & Other pages
+    happening_now: "अभी हो रहा है",
+    join_today: "आज ही शामिल हों।",
+    sign_up_google: "Google के साथ साइन अप करें",
+    sign_up_apple: "Apple के साथ साइन अप करें",
+    create_account: "खाता बनाएं",
+    sign_in: "साइन इन करें",
+    explore_universe: "X ब्रह्मांड का अन्वेषण करें",
+    explore_desc: "इस पृष्ठ के इंटरैक्टिव मॉड्यूल अगले अपडेट में पूरी तरह से लोड हो जाएंगे। फीड या प्रोफाइल आजमाएं!",
   },
   Portuguese: {
     home: "Início",
@@ -120,6 +148,15 @@ export const translations = {
     forgot_password: "Esqueceu a senha?",
     password_recovery: "Recuperação de senha",
     back_to_login: "Voltar ao login",
+    // Landing & Other pages
+    happening_now: "Acontecendo agora",
+    join_today: "Participe hoje.",
+    sign_up_google: "Inscrever-se com Google",
+    sign_up_apple: "Inscrever-se com Apple",
+    create_account: "Criar conta",
+    sign_in: "Entrar",
+    explore_universe: "Explore o universo X",
+    explore_desc: "Os módulos interactivos desta página serão totalmente carregados nas próximas atualizações. Experimente o Feed ou Perfil!",
   },
   Chinese: {
     home: "首页",
@@ -150,6 +187,15 @@ export const translations = {
     forgot_password: "忘记密码？",
     password_recovery: "找回密码",
     back_to_login: "返回登录",
+    // Landing & Other pages
+    happening_now: "正在发生",
+    join_today: "立即加入。",
+    sign_up_google: "使用 Google 注册",
+    sign_up_apple: "使用 Apple 注册",
+    create_account: "创建账户",
+    sign_in: "登录",
+    explore_universe: "探索 X 宇宙",
+    explore_desc: "该页面的互动模块将在下次更新中完全加载。尝试动态或个人资料！",
   },
   French: {
     home: "Accueil",
@@ -180,6 +226,15 @@ export const translations = {
     forgot_password: "Mot de passe oublié?",
     password_recovery: "Récupération de mot de passe",
     back_to_login: "Retour à la connexion",
+    // Landing & Other pages
+    happening_now: "Ça se passe maintenant",
+    join_today: "Rejoignez-nous aujourd'hui.",
+    sign_up_google: "S'inscrire avec Google",
+    sign_up_apple: "S'inscrire avec Apple",
+    create_account: "Créer un compte",
+    sign_in: "Se connecter",
+    explore_universe: "Explorez l'univers X",
+    explore_desc: "Les modules interactifs de cette page seront entièrement chargés dans les prochaines mises à jour. Essayez le flux ou le profil!",
   }
 };
 
@@ -187,12 +242,30 @@ export type Language = keyof typeof translations;
 
 export function useTranslation() {
   const { user } = useAuth();
-  const lang: Language = (user?.preferredLanguage as Language) || "English";
+  const [guestLang, setGuestLang] = useState<Language>("English");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("twiller-guest-lang") as Language;
+      if (saved) {
+        setGuestLang(saved);
+      }
+    }
+  }, []);
+
+  const lang: Language = (user?.preferredLanguage as Language) || guestLang || "English";
 
   const t = (key: keyof typeof translations["English"]) => {
     const dict = translations[lang] || translations["English"];
     return dict[key] || translations["English"][key] || key;
   };
 
-  return { t, currentLanguage: lang };
+  const changeGuestLanguage = (newLang: Language) => {
+    setGuestLang(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("twiller-guest-lang", newLang);
+    }
+  };
+
+  return { t, currentLanguage: lang, changeGuestLanguage };
 }

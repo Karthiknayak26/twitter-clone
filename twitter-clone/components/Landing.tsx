@@ -3,9 +3,12 @@
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Authmodel from "./ui/Authmodel";
+import { useTranslation, Language } from "@/lib/i18n";
+import { Globe } from "lucide-react";
 
 export default function Landing() {
   const { login } = useAuth();
+  const { t, currentLanguage, changeGuestLanguage } = useTranslation();
   
   // Modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -32,6 +35,23 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row relative select-none">
       
+      {/* 🌐 GUEST LANGUAGE SELECTOR (TOP RIGHT OVERLAY) */}
+      <div className="absolute top-6 right-6 z-30 flex items-center gap-2 bg-zinc-950/80 border border-zinc-800 rounded-full px-3 py-1.5 backdrop-blur-md shadow-lg">
+        <Globe className="h-4 w-4 text-[#1d9bf0]" />
+        <select
+          value={currentLanguage}
+          onChange={(e) => changeGuestLanguage(e.target.value as Language)}
+          className="bg-transparent border-none text-xs font-semibold text-zinc-300 focus:outline-none cursor-pointer pr-1"
+        >
+          <option value="English">English</option>
+          <option value="Spanish">Español</option>
+          <option value="Hindi">हिन्दी</option>
+          <option value="Portuguese">Português</option>
+          <option value="Chinese">中文</option>
+          <option value="French">Français</option>
+        </select>
+      </div>
+
       {/* LEFT COLUMN: Large X Logo */}
       <div className="flex-1 flex items-center justify-center p-8 md:p-12 lg:p-24 border-b md:border-b-0 md:border-r border-zinc-900">
         <svg viewBox="0 0 24 24" className="h-28 w-28 sm:h-48 sm:w-48 md:h-72 md:w-72 lg:h-[400px] lg:w-[400px] text-white fill-current animate-fade-in">
@@ -44,12 +64,12 @@ export default function Landing() {
         
         {/* Main Header */}
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-white leading-[1.05] animate-slide-up">
-          Happening now
+          {t("happening_now")}
         </h1>
         
         {/* Sub Header */}
         <h2 className="text-3xl font-bold mt-10 md:mt-12 mb-8 text-white leading-snug animate-slide-up delay-100">
-          Join today.
+          {t("join_today")}
         </h2>
         
         {/* Buttons List Container */}
@@ -84,7 +104,7 @@ export default function Landing() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>Sign up with Google</span>
+                <span>{t("sign_up_google")}</span>
               </>
             )}
           </button>
@@ -103,7 +123,7 @@ export default function Landing() {
                 <svg className="h-4.5 w-4.5 fill-black" viewBox="0 0 170 170">
                   <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.34.13-9.13-1.88-14.4-6.04-3.58-2.82-7.46-7.53-11.64-14.14-10.74-17-16.11-34.82-16.11-53.48 0-14.1 3.58-25.96 10.74-35.59 7.16-9.62 16.32-14.44 27.48-14.44 4.88 0 10.13 1.41 15.75 4.23 5.62 2.82 9.4 4.23 11.34 4.23 1.62 0 5.25-1.3 10.9-3.9 5.66-2.6 10.53-3.8 15.61-3.6 16.03.76 28.21 6.84 36.52 18.23-14.2 8.57-21.2 20.3-21 35.2.22 11.27 4.28 20.73 12.19 28.36 7.9 7.63 17.5 11.75 28.8 12.36.43 2.7.98 5.6 1.65 8.7zm-27.1-105.7c0 8.02-2.93 15.22-8.79 21.6-5.86 6.37-12.98 9.95-21.36 10.72.11-7.26 3.12-14.53 9.04-21.8 5.92-7.27 13.06-11.27 21.43-12 0 .5.08 1 .08 1.48z" />
                 </svg>
-                <span>Sign up with Apple</span>
+                <span>{t("sign_up_apple")}</span>
               </>
             )}
           </button>
@@ -120,7 +140,7 @@ export default function Landing() {
             onClick={() => handleOpenAuth("signup")}
             className="bg-[#1d9bf0] hover:bg-[#1a8cd8] text-white font-bold py-2.5 px-4 rounded-full text-[14.5px] transition duration-200 shadow-md cursor-pointer"
           >
-            Create account
+            {t("create_account")}
           </button>
           
           {/* Legal Terms Text */}
@@ -138,7 +158,7 @@ export default function Landing() {
               onClick={() => handleOpenAuth("login")}
               className="bg-transparent border border-zinc-700 hover:bg-zinc-900 text-[#1d9bf0] font-bold py-2 px-4 rounded-full text-[14.5px] transition duration-200 cursor-pointer"
             >
-              Log in
+              {t("sign_in")}
             </button>
           </div>
           
