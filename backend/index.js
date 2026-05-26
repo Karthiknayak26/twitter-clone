@@ -64,6 +64,17 @@ function isWithinISTWindow() {
   return totalMinutes >= 840 && totalMinutes < 1140;
 }
 
+function isWithinPaymentISTWindow() {
+  const now = new Date();
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(now.getTime() + IST_OFFSET_MS);
+  const hours = istNow.getUTCHours();
+  const minutes = istNow.getUTCMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  // 10:00 AM = 600 minutes, 11:00 AM = 660 minutes
+  return totalMinutes >= 600 && totalMinutes < 660;
+}
+
 function getISTTimeString() {
   const now = new Date();
   const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
@@ -355,9 +366,24 @@ app.post("/audio/post", async (req, res) => {
       });
     }
 
-    // 7. Validate user info
     if (!user || !user.displayName || !user.username) {
       return res.status(400).json({ error: "MISSING_USER", message: "User profile information is required" });
+    }
+
+    // ─── Subscription Limit Guard ───
+    const dbUser = await User.findOne({ username: user.username });
+    if (dbUser) {
+      const plan = dbUser.subscriptionPlan || "Free";
+      const planLimits = { Free: 1, Bronze: 3, Silver: 5, Gold: Infinity };
+      const limit = planLimits[plan] || 1;
+      
+      const currentTweetsCount = await Tweet.countDocuments({ "user.username": user.username });
+      if (currentTweetsCount >= limit) {
+        return res.status(403).json({
+          error: "LIMIT_EXCEEDED",
+          message: `You have reached the posting limit for your ${plan} Plan (${limit} tweet${limit > 1 ? "s" : ""}). Please upgrade your plan to continue posting.`
+        });
+      }
     }
 
     // 8. Require at least a default caption for audio tweets
@@ -579,6 +605,146 @@ app.post("/forgot-password/request", async (req, res) => {
   }
 });
 
+// ── NODEMAILER INVOICE DISPATCHER ──────────────────────────────────────────
+async function sendInvoiceEmail(toEmail, plan, price, transactionId) {
+  if (!emailTransporter) {
+    console.log(`\n📧 [DEV] Invoice for ${toEmail}: Plan: ${plan}, Price: ₹${price}, Txn: ${transactionId}\n`);
+    return { devMode: true };
+  }
+
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+
+  await emailTransporter.sendMail({
+    from: `"Twiller Premium 🐦" <${process.env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: `Your Twiller Premium Invoice — ${plan} Plan`,
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #000; color: #fff; padding: 32px; border-radius: 16px; border: 1px solid #333;">
+        <h2 style="color: #1d9bf0; margin: 0 0 4px;">🐦 Twiller Premium</h2>
+        <span style="color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Official Subscription Invoice</span>
+        <hr style="border: 0; border-top: 1px solid #222; margin: 20px 0;">
+        <div style="margin-bottom: 24px;">
+          <h3 style="margin: 0 0 12px; color: #fff; font-size: 14px; font-weight: bold;">Transaction Details</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #aaa;">
+            <tr>
+              <td style="padding: 6px 0; border-bottom: 1px solid #111;">Subscription Plan</td>
+              <td style="text-align: right; color: #fff; font-weight: bold; padding: 6px 0; border-bottom: 1px solid #111;">${plan} Plan</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; border-bottom: 1px solid #111;">Price</td>
+              <td style="text-align: right; color: #1d9bf0; font-weight: bold; padding: 6px 0; border-bottom: 1px solid #111;">₹${price} / month</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; border-bottom: 1px solid #111;">Billing Status</td>
+              <td style="text-align: right; color: #10b981; font-weight: bold; padding: 6px 0; border-bottom: 1px solid #111;">Paid (Success)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; border-bottom: 1px solid #111;">Date</td>
+              <td style="text-align: right; color: #fff; padding: 6px 0; border-bottom: 1px solid #111;">${dateStr}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0;">Transaction ID</td>
+              <td style="text-align: right; font-family: monospace; color: #888; padding: 6px 0;">${transactionId}</td>
+            </tr>
+          </table>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #222; margin: 20px 0;">
+        <p style="color: #666; font-size: 11.5px; margin: 0; text-align: center; line-height: 1.6;">
+          Thank you for subscribing to Twiller Premium! Your posting limits have been immediately expanded.<br>
+          For billing inquiries, contact billing@twiller.com.
+        </p>
+      </div>
+    `,
+  });
+  return { devMode: false };
+}
+
+// ── POST /payments/checkout ────────────────────────────────────────────────
+// Request: { userId, plan, price }
+// Response: { success, user, invoice }
+// Edge Cases: outside time window (10 AM - 11 AM IST) → 403 Forbidden
+app.post("/payments/checkout", async (req, res) => {
+  try {
+    // 1. Authoritative server-side payment window check (10:00 AM – 11:00 AM IST)
+    if (!isWithinPaymentISTWindow()) {
+      return res.status(403).json({
+        error: "PAYMENT_WINDOW_LOCKED",
+        message: "Premium subscription checkout is only permitted between 10:00 AM and 11:00 AM IST daily.",
+        currentIST: getISTTimeString()
+      });
+    }
+
+    const { userId, plan, price } = req.body;
+    if (!userId || !plan || price === undefined) {
+      return res.status(400).json({ error: "MISSING_FIELDS", message: "userId, plan, and price are required" });
+    }
+
+    // Validate plan name
+    if (!["Free", "Bronze", "Silver", "Gold"].includes(plan)) {
+      return res.status(400).json({ error: "INVALID_PLAN", message: "Invalid subscription plan level" });
+    }
+
+    // Find User
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "USER_NOT_FOUND", message: "User not found" });
+    }
+
+    // Generate transaction details
+    const transactionId = "tx_" + crypto.randomBytes(12).toString("hex");
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    // Update plan in MongoDB
+    user.subscriptionPlan = plan;
+    await user.save();
+
+    // Trigger Nodemailer invoice dispatch
+    const emailResult = await sendInvoiceEmail(user.email, plan, price, transactionId);
+
+    const invoicePayload = {
+      transactionId,
+      plan,
+      price,
+      date: dateStr,
+      status: "Paid",
+      customerEmail: user.email
+    };
+
+    const responsePayload = {
+      success: true,
+      message: `Successfully upgraded to the ${plan} Plan!`,
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        displayName: user.displayName,
+        email: user.email,
+        avatar: user.avatar,
+        subscriptionPlan: user.subscriptionPlan
+      },
+      invoice: invoicePayload
+    };
+
+    // Dev fallback details
+    if (emailResult.devMode) {
+      responsePayload.devInvoice = invoicePayload;
+      responsePayload.devNote = "SMTP not configured. Invoice returned in response payload for dev testing.";
+    }
+
+    return res.status(200).json(responsePayload);
+  } catch (err) {
+    console.error("Payment checkout error:", err);
+    return res.status(500).json({ error: "SERVER_ERROR", message: err.message });
+  }
+});
+
 // Create a new tweet
 app.post("/post", async (req, res) => {
   try {
@@ -588,6 +754,22 @@ app.post("/post", async (req, res) => {
     }
     if (!user || !user.displayName || !user.username) {
       return res.status(400).send({ message: "User profile information is required" });
+    }
+
+    // ─── Subscription Limit Guard ───
+    const dbUser = await User.findOne({ username: user.username });
+    if (dbUser) {
+      const plan = dbUser.subscriptionPlan || "Free";
+      const planLimits = { Free: 1, Bronze: 3, Silver: 5, Gold: Infinity };
+      const limit = planLimits[plan] || 1;
+      
+      const currentTweetsCount = await Tweet.countDocuments({ "user.username": user.username });
+      if (currentTweetsCount >= limit) {
+        return res.status(403).json({
+          error: "LIMIT_EXCEEDED",
+          message: `You have reached the posting limit for your ${plan} Plan (${limit} tweet${limit > 1 ? "s" : ""}). Please upgrade your plan to continue posting.`
+        });
+      }
     }
 
     const newTweet = new Tweet({

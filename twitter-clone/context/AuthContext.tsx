@@ -23,6 +23,7 @@ export interface User {
   location?: string;
   website?: string;
   coverImage?: string;
+  subscriptionPlan?: string;
 }
 
 export interface AuthContextType {
@@ -40,6 +41,7 @@ export interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   googlesignin: () => Promise<void>;
+  syncUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -251,8 +253,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const syncUser = async () => {
+    if (user?.email) {
+      try {
+        const res = await axiosInstance.get("/loggedinuser", {
+          params: { email: user.email }
+        });
+        if (res.data) {
+          setUser(res.data);
+          localStorage.setItem("twiller-user", JSON.stringify(res.data));
+        }
+      } catch (err) {
+        console.error("Failed to sync user session:", err);
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, updateProfile, logout, isLoading, googlesignin }}>
+    <AuthContext.Provider value={{ user, login, signup, updateProfile, logout, isLoading, googlesignin, syncUser }}>
       {children}
     </AuthContext.Provider>
   );

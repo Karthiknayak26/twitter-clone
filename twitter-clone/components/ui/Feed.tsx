@@ -20,6 +20,7 @@ import {
 import { db, isFirebaseConfigured } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
 import { containsKeywords, sendTweetNotification, areNotificationsActive } from "@/lib/notificationService";
+import SubscriptionModal from "./SubscriptionModal";
 
 export default function Feed() {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ export default function Feed() {
   // Local state for tweets (initialized with mock data or Express entries)
   const [tweets, setTweets] = useState<TweetType[]>([]);
   const [activeTab, setActiveTab] = useState<"for-you" | "following">("for-you");
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   /**
    * Tracks tweet IDs that have already been seen by the user.
@@ -162,8 +164,11 @@ export default function Feed() {
       if (res.data) {
         await fetchTweets();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to post tweet to Express backend:", error);
+      if (error.response?.status === 403 && error.response?.data?.error === "LIMIT_EXCEEDED") {
+        setShowSubscriptionModal(true);
+      }
     }
   };
 
@@ -287,6 +292,12 @@ export default function Feed() {
           />
         ))}
       </div>
+
+      {/* Subscription Upgrade Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
 
     </div>
   );

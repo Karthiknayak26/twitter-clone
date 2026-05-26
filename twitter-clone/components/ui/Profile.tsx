@@ -17,6 +17,7 @@ import {
   Phone
 } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
+import SubscriptionModal from "./SubscriptionModal";
 import { 
   collection, 
   query, 
@@ -49,6 +50,7 @@ export default function Profile({ onBack }: ProfileProps) {
   
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     displayName: "",
@@ -380,6 +382,15 @@ export default function Profile({ onBack }: ProfileProps) {
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-1">
             {user.displayName}
             <CheckCircle2 className="h-4.5 w-4.5 fill-[#1d9bf0] text-black stroke-[1.5]" />
+            {user.subscriptionPlan === "Bronze" && (
+              <span className="text-[10px] bg-amber-700/10 text-amber-500 font-bold px-2 py-0.5 rounded border border-amber-800/20 select-none">🥉 Bronze</span>
+            )}
+            {user.subscriptionPlan === "Silver" && (
+              <span className="text-[10px] bg-zinc-500/10 text-zinc-400 font-bold px-2 py-0.5 rounded border border-zinc-600/20 select-none">🥈 Silver</span>
+            )}
+            {user.subscriptionPlan === "Gold" && (
+              <span className="text-[10px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded border border-yellow-600/20 select-none">🥇 Gold</span>
+            )}
           </h1>
           <span className="text-[12px] text-zinc-500 font-normal">
             {profileTweets.length} posts
@@ -410,7 +421,13 @@ export default function Profile({ onBack }: ProfileProps) {
       </div>
 
       {/* Edit Profile Button Row */}
-      <div className="flex justify-end p-4">
+      <div className="flex justify-end p-4 space-x-2">
+        <button 
+          onClick={() => setShowSubscriptionModal(true)}
+          className="border border-purple-800/50 bg-transparent hover:bg-purple-900/10 text-[#c084fc] font-bold py-1.5 px-4 rounded-full text-[14px] transition cursor-pointer select-none"
+        >
+          Upgrade Plan
+        </button>
         <button 
           onClick={() => setShowEditModal(true)}
           className="border border-zinc-700 bg-transparent hover:bg-zinc-900 text-white font-bold py-1.5 px-4 rounded-full text-[14px] transition cursor-pointer select-none"
@@ -525,6 +542,18 @@ export default function Profile({ onBack }: ProfileProps) {
           <h2 className="text-xl font-extrabold text-white leading-tight flex items-center gap-1">
             {user.displayName}
             <CheckCircle2 className="h-4.5 w-4.5 fill-[#1d9bf0] text-black stroke-[1.5]" />
+            {user.subscriptionPlan === "Bronze" && (
+              <span className="text-[10px] bg-amber-700/10 text-amber-500 font-bold px-2 py-0.5 rounded border border-amber-800/20 select-none">🥉 Bronze Plan</span>
+            )}
+            {user.subscriptionPlan === "Silver" && (
+              <span className="text-[10px] bg-zinc-500/10 text-zinc-400 font-bold px-2 py-0.5 rounded border border-zinc-600/20 select-none">🥈 Silver Plan</span>
+            )}
+            {user.subscriptionPlan === "Gold" && (
+              <span className="text-[10px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded border border-yellow-600/20 select-none">🥇 Gold Plan</span>
+            )}
+            {(!user.subscriptionPlan || user.subscriptionPlan === "Free") && (
+              <span className="text-[10px] bg-zinc-800/10 text-zinc-500 font-medium px-2 py-0.5 rounded border border-zinc-800/20 select-none">🌱 Free Plan</span>
+            )}
           </h2>
           <span className="text-sm text-zinc-500 font-normal">@{user.username}</span>
         </div>
@@ -831,6 +860,12 @@ export default function Profile({ onBack }: ProfileProps) {
           </div>
         </div>
       )}
+      
+      {/* Subscription Upgrade Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
       
     </div>
   );

@@ -49,6 +49,11 @@ const UserSchema = new mongoose.Schema({
   lastPasswordResetDate: {
     type: Date,
     default: null
+  },
+  subscriptionPlan: {
+    type: String,
+    enum: ["Free", "Bronze", "Silver", "Gold"],
+    default: "Free"
   }
 }, { 
   timestamps: true,
