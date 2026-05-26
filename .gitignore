@@ -1,0 +1,12 @@
+node_modules/
+backend/node_modules/
+twitter-clone/node_modules/
+.env
+backend/.env
+twitter-clone/.env.local
+twitter-clone/.next/
+.next/
+dist/
+build/
+.DS_Store
+Thumbs.db
