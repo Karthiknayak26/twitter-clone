@@ -58,7 +58,14 @@ const UserSchema = new mongoose.Schema({
   preferredLanguage: {
     type: String,
     default: "English"
-  }
+  },
+  loginHistory: [{
+    browser: String,
+    os: String,
+    device: String,
+    ipAddress: String,
+    loginTime: { type: Date, default: Date.now }
+  }]
 }, { 
   timestamps: true,
   toJSON: {

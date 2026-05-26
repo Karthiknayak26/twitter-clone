@@ -11,6 +11,7 @@ import {
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
+import LoginVerifyModal from "@/components/ui/LoginVerifyModal";
 
 export interface User {
   id: string;
@@ -26,6 +27,7 @@ export interface User {
   subscriptionPlan?: string;
   preferredLanguage?: string;
   phoneNumber?: string;
+  loginHistory?: any[];
 }
 
 export interface AuthContextType {
@@ -60,6 +62,12 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loginOtpInfo, setLoginOtpInfo] = useState<{
+    email: string;
+    devOtp?: string;
+    resolve: () => void;
+    reject: (err: any) => void;
+  } | null>(null);
 
   // Synchronize authentication session state with Express backend
   useEffect(() => {
@@ -113,6 +121,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // 1. Parse client environment details
+      const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+      let browser = "Other";
+      let os = "Other";
+      let device = "desktop";
+
+      if (ua.includes("Edg") || ua.includes("Edge") || ua.includes("Trident") || ua.includes("MSIE")) {
+        browser = "Microsoft Browser";
+      } else if ((ua.includes("Chrome") || ua.includes("CriOS")) && !ua.includes("OPR") && !ua.includes("Brd")) {
+        browser = "Google Chrome";
+      } else if (ua.includes("Firefox") || ua.includes("FxiOS")) {
+        browser = "Firefox";
+      } else if (ua.includes("Safari") && !ua.includes("Chrome")) {
+        browser = "Safari";
+      }
+
+      if (ua.includes("Windows")) {
+        os = "Windows";
+      } else if (ua.includes("Macintosh") || ua.includes("Mac OS X")) {
+        os = "macOS";
+      } else if (ua.includes("Linux")) {
+        os = "Linux";
+      } else if (ua.includes("Android")) {
+        os = "Android";
+      } else if (ua.includes("iPhone") || ua.includes("iPad")) {
+        os = "iOS";
+      }
+
+      const isMobileUA = /Mobi|Android|iPhone|iPad|Windows Phone/i.test(ua);
+      if (isMobileUA || (typeof window !== "undefined" && window.innerWidth < 768)) {
+        device = "mobile";
+      } else {
+        const hasBattery = typeof navigator !== "undefined" && ("getBattery" in navigator);
+        const isMacBook = ua.includes("Macintosh");
+        const isSmallScreen = typeof window !== "undefined" && window.screen.width <= 1600;
+
+        if (isMacBook || hasBattery || isSmallScreen) {
+          device = "laptop";
+        } else {
+          device = "desktop";
+        }
+      }
+
+      // 2. Call backend pre-login to enforce daily time gates and browser verification checks
+      const preLoginRes = await axiosInstance.post("/auth/pre-login", {
+        email,
+        browser,
+        os,
+        device
+      });
+
+      // 3. Google Chrome Secure OTP authentication gate
+      if (preLoginRes.data.requiresOtp) {
+        await new Promise<void>((resolve, reject) => {
+          setLoginOtpInfo({
+            email,
+            devOtp: preLoginRes.data.devOtp,
+            resolve,
+            reject
+          });
+        });
+      }
+
+      // 4. Perform actual authentication
       if (isFirebaseConfigured) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
@@ -129,8 +201,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(mockUser);
         localStorage.setItem("twiller-user", JSON.stringify(mockUser));
       }
-    } catch (error) {
+
+      // 5. Post-login session logging to store IP, browser, and device in MongoDB
+      try {
+        await axiosInstance.post("/auth/log-session", {
+          email,
+          browser,
+          os,
+          device
+        });
+      } catch (logErr) {
+        console.error("Failed to log login session information:", logErr);
+      }
+
+    } catch (error: any) {
       console.error("Login failure:", error);
+      if (error.response?.data?.error === "MOBILE_LOCKED") {
+        throw new Error(error.response.data.message);
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -278,6 +366,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={{ user, login, signup, updateProfile, logout, isLoading, googlesignin, syncUser }}>
       {children}
+      {loginOtpInfo && (
+        <LoginVerifyModal
+          isOpen={!!loginOtpInfo}
+          email={loginOtpInfo.email}
+          devOtp={loginOtpInfo.devOtp}
+          onClose={() => {
+            loginOtpInfo.reject(new Error("Login verification cancelled by user."));
+            setLoginOtpInfo(null);
+          }}
+          onSuccess={() => {
+            loginOtpInfo.resolve();
+            setLoginOtpInfo(null);
+          }}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

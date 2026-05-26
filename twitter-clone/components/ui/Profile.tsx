@@ -15,7 +15,8 @@ import {
   BellRing,
   ExternalLink,
   Phone,
-  Globe
+  Globe,
+  ShieldCheck
 } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
 import SubscriptionModal from "./SubscriptionModal";
@@ -579,6 +580,59 @@ export default function Profile({ onBack }: ProfileProps) {
               <option value="French">Français (French)</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* ═══════════ LOGIN SESSION HISTORY CARD ═══════════ */}
+      <div className="mx-4 mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 overflow-hidden">
+        {/* Card Header */}
+        <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-zinc-800/60">
+          <ShieldCheck className="h-5 w-5 text-[#1d9bf0]" />
+          <div>
+            <h3 className="text-white font-bold text-[14px] leading-none">Login Session History</h3>
+            <p className="text-zinc-500 text-[11.5px] mt-0.5">
+              Transparent log of your last login environments.
+            </p>
+          </div>
+        </div>
+
+        {/* Card Body (Scrollable List) */}
+        <div className="divide-y divide-zinc-900 max-h-60 overflow-y-auto">
+          {user.loginHistory && user.loginHistory.length > 0 ? (
+            [...user.loginHistory].reverse().slice(0, 5).map((session: any, idx: number) => (
+              <div key={idx} className="px-4 py-3 flex justify-between items-center hover:bg-zinc-900/30 transition-all select-none">
+                <div className="flex flex-col text-left space-y-0.5">
+                  <span className="font-semibold text-white text-xs flex items-center gap-1.5">
+                    {session.browser === "Google Chrome" && <span className="text-blue-400 font-bold">🌐 Chrome</span>}
+                    {session.browser === "Microsoft Browser" && <span className="text-sky-400 font-bold">🌐 Edge / IE</span>}
+                    {session.browser !== "Google Chrome" && session.browser !== "Microsoft Browser" && <span className="text-zinc-300 font-medium">🌐 {session.browser}</span>}
+                    <span className="text-[10px] text-zinc-500 font-normal">on {session.os}</span>
+                  </span>
+                  <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-medium capitalize">
+                    {session.device === "mobile" && "📱 Mobile"}
+                    {session.device === "laptop" && "💻 Laptop"}
+                    {session.device === "desktop" && "🖥 Desktop"}
+                    {session.device !== "mobile" && session.device !== "laptop" && session.device !== "desktop" && `🖥 ${session.device}`}
+                  </span>
+                </div>
+                <div className="flex flex-col text-right space-y-0.5">
+                  <span className="font-mono text-[10.5px] text-blue-400/90 font-semibold">{session.ipAddress}</span>
+                  <span className="text-[9px] text-zinc-500">
+                    {new Date(session.loginTime).toLocaleString(undefined, { 
+                      month: "short", 
+                      day: "numeric", 
+                      hour: "2-digit", 
+                      minute: "2-digit" 
+                    })}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="px-4 py-6 text-center text-zinc-500 text-xs font-normal">
+              No recent login history sessions recorded.
+            </div>
+          )}
         </div>
       </div>
 
