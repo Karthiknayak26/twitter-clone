@@ -75,7 +75,11 @@ export default function Feed() {
       views: tweet.views || "1",
       isLiked: currentUserId ? likedBy.includes(currentUserId) : false,
       isReposted: currentUserId ? repostedBy.includes(currentUserId) : false,
-      isBookmarked: currentUserId ? bookmarkedBy.includes(currentUserId) : false
+      isBookmarked: currentUserId ? bookmarkedBy.includes(currentUserId) : false,
+      tweetType: tweet.tweetType || "text",
+      audioUrl: tweet.audioUrl,
+      audioDuration: tweet.audioDuration,
+      audioFileName: tweet.audioFileName
     };
   };
 
@@ -269,7 +273,7 @@ export default function Feed() {
       </header>
 
       {/* Tweet Composer Box */}
-      <TweetComposer onPost={handleComposerPost} />
+      <TweetComposer onPost={handleComposerPost} onAudioPostSuccess={fetchTweets} />
 
       {/* Tweets scrollable list */}
       <div className="divide-y divide-zinc-800">

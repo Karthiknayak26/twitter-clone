@@ -7,17 +7,21 @@ import {
   Smile, 
   Calendar, 
   MapPin, 
-  Globe2
+  Globe2,
+  Mic
 } from "lucide-react";
+import AudioTweetModal from "./AudioTweetModal";
 
 interface TweetComposerProps {
   onPost: (text: string) => Promise<void> | void;
+  onAudioPostSuccess?: () => void;
 }
 
-export default function TweetComposer({ onPost }: TweetComposerProps) {
+export default function TweetComposer({ onPost, onAudioPostSuccess }: TweetComposerProps) {
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
   
   const maxlength = 200;
   const characterCount = content.length;
@@ -78,6 +82,17 @@ export default function TweetComposer({ onPost }: TweetComposerProps) {
             <button type="button" className="p-2 hover:bg-zinc-900 rounded-full transition duration-150 cursor-pointer">
               <ImageIcon className="h-4.5 w-4.5" />
             </button>
+            
+            {/* 🎙 Voice / Audio Tweet Button */}
+            <button 
+              type="button" 
+              onClick={() => setIsAudioModalOpen(true)}
+              className="p-2 hover:bg-zinc-900 rounded-full transition duration-150 cursor-pointer"
+              title="Record or Upload Audio Tweet"
+            >
+              <Mic className="h-4.5 w-4.5" />
+            </button>
+
             <button type="button" className="p-2 hover:bg-zinc-900 rounded-full transition duration-150 cursor-pointer">
               <Smile className="h-4.5 w-4.5" />
             </button>
@@ -129,6 +144,17 @@ export default function TweetComposer({ onPost }: TweetComposerProps) {
           
         </div>
       </form>
+
+      {/* Audio Tweet Modal */}
+      <AudioTweetModal 
+        isOpen={isAudioModalOpen}
+        onClose={() => setIsAudioModalOpen(false)}
+        onPostSuccess={() => {
+          if (onAudioPostSuccess) {
+            onAudioPostSuccess();
+          }
+        }}
+      />
       
     </div>
   );

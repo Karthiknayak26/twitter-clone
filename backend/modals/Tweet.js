@@ -10,12 +10,31 @@ const TweetSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true,
-    maxlength: 200
+    maxlength: 280
   },
   image: {
     type: String,
     default: ""
   },
+  // ── Audio Tweet Fields ──────────────────────────────────────────────────
+  tweetType: {
+    type: String,
+    enum: ["text", "audio"],
+    default: "text"
+  },
+  audioUrl: {
+    type: String,
+    default: ""
+  },
+  audioDuration: {
+    type: Number,   // duration in seconds
+    default: 0
+  },
+  audioFileName: {
+    type: String,
+    default: ""
+  },
+  // ────────────────────────────────────────────────────────────────────────
   likedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
