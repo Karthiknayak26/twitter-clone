@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Sparkles } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
@@ -19,6 +19,7 @@ import {
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
+import { containsKeywords, sendTweetNotification, areNotificationsActive } from "@/lib/notificationService";
 
 export default function Feed() {
   const { user } = useAuth();
@@ -26,6 +27,20 @@ export default function Feed() {
   // Local state for tweets (initialized with mock data or Express entries)
   const [tweets, setTweets] = useState<TweetType[]>([]);
   const [activeTab, setActiveTab] = useState<"for-you" | "following">("for-you");
+
+  /**
+   * Tracks tweet IDs that have already been seen by the user.
+   * On first load: all existing tweet IDs are added without notification.
+   * On subsequent polls: only NEW IDs (not in this set) are candidates for notification.
+   * Using useRef so changes don't trigger re-renders.
+   */
+  const seenTweetIds = useRef<Set<string>>(new Set());
+
+  /**
+   * True until the very first successful fetch completes.
+   * Prevents notifications from firing on the initial page load.
+   */
+  const isInitialLoad = useRef<boolean>(true);
 
   // Format timestamp helper
   const formatTime = (date: Date) => {
@@ -69,6 +84,46 @@ export default function Feed() {
       const res = await axiosInstance.get("/post");
       if (res.data) {
         const mapped = res.data.map((t: any) => mapBackendTweetToFrontend(t, user?.id));
+
+        if (isInitialLoad.current) {
+          // ── First load: mark ALL existing tweets as seen WITHOUT notifying ──
+          // This is the critical edge case: page load should never fire notifications
+          // for tweets that were already posted before the user opened the app.
+          mapped.forEach((tweet: TweetType) => {
+            if (tweet.id) seenTweetIds.current.add(tweet.id);
+          });
+          isInitialLoad.current = false;
+        } else {
+          // ── Subsequent polls: detect genuinely new tweets ──
+          // Only tweets whose IDs weren't present in the previous fetch are "new".
+          const newTweets = mapped.filter(
+            (tweet: TweetType) => tweet.id && !seenTweetIds.current.has(tweet.id)
+          );
+
+          if (newTweets.length > 0 && areNotificationsActive()) {
+            // Fire at most one notification per poll to avoid notification spam.
+            // We notify for the FIRST new tweet that matches keywords.
+            for (const tweet of newTweets) {
+              if (containsKeywords(tweet.content)) {
+                sendTweetNotification({
+                  content: tweet.content,
+                  user: {
+                    displayName: tweet.user.displayName,
+                    username: tweet.user.username,
+                    avatar: tweet.user.avatar,
+                  },
+                });
+                break; // one notification per poll — prevents notification storms
+              }
+            }
+          }
+
+          // Mark all newly fetched tweets as seen (regardless of keyword match)
+          newTweets.forEach((tweet: TweetType) => {
+            if (tweet.id) seenTweetIds.current.add(tweet.id);
+          });
+        }
+
         setTweets(mapped);
       }
     } catch (err) {
@@ -77,7 +132,10 @@ export default function Feed() {
   };
 
   // Live Query & Poll Mode: Load tweets on mount/user-change and poll every 4 seconds to keep updated
+  // Reset seen state when user changes (e.g., logout → login as different user)
   useEffect(() => {
+    seenTweetIds.current = new Set();
+    isInitialLoad.current = true;
     fetchTweets();
     const interval = setInterval(fetchTweets, 4000);
     return () => clearInterval(interval);

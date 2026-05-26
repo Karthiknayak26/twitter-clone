@@ -9,7 +9,11 @@ import {
   Link as LinkIcon, 
   Calendar,
   CheckCircle2,
-  X
+  X,
+  Bell,
+  BellOff,
+  BellRing,
+  ExternalLink
 } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
 import { 
@@ -24,6 +28,14 @@ import {
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
+import {
+  isNotificationSupported,
+  getPermissionState,
+  requestPermission,
+  getUserNotifPref,
+  setUserNotifPref,
+  TRACKED_KEYWORDS,
+} from "@/lib/notificationService";
 
 interface ProfileProps {
   onBack: () => void;
@@ -46,9 +58,88 @@ export default function Profile({ onBack }: ProfileProps) {
     coverImage: ""
   });
 
+  // ─── Notification Settings State ─────────────────────────────────────────
+  // notifSupported: false if browser doesn't support the Notification API (e.g. Safari iOS)
+  // notifPref: user's saved preference (from localStorage)
+  // notifPermission: current browser-level permission grant state
+  // notifLoading: true while requestPermission() is in-flight
+  const [notifSupported, setNotifSupported] = useState<boolean>(true);
+  const [notifPref, setNotifPref] = useState<boolean>(false);
+  const [notifPermission, setNotifPermission] = useState<"granted" | "denied" | "default" | "unsupported">("default");
+  const [notifLoading, setNotifLoading] = useState<boolean>(false);
+
   // Refs for file inputs
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync notification state from localStorage and browser API on mount (client-side only)
+  useEffect(() => {
+    const supported = isNotificationSupported();
+    setNotifSupported(supported);
+    if (supported) {
+      setNotifPref(getUserNotifPref());
+      setNotifPermission(getPermissionState());
+    } else {
+      setNotifPermission("unsupported");
+    }
+  }, []);
+
+  /**
+   * Handles toggling the notification preference.
+   *
+   * When enabling:
+   *   1. If permission not yet asked → requests it from the browser
+   *   2. If granted → saves pref as true
+   *   3. If denied → saves pref as false, shows denied state (can't re-prompt)
+   *
+   * When disabling:
+   *   Simply sets pref to false (browsers don't allow revoking permission via JS)
+   */
+  const handleToggleNotifications = async () => {
+    if (!notifSupported) return; // No-op on unsupported browsers
+
+    if (notifPref) {
+      // Turning OFF — straightforward
+      setUserNotifPref(false);
+      setNotifPref(false);
+      return;
+    }
+
+    // Turning ON — need to check/request browser permission first
+    const currentPermission = getPermissionState();
+
+    if (currentPermission === "denied") {
+      // Browser has permanently denied — cannot re-request via JS.
+      // User must manually update in browser settings.
+      setNotifPermission("denied");
+      return;
+    }
+
+    if (currentPermission === "granted") {
+      // Already have permission — just enable the preference
+      setUserNotifPref(true);
+      setNotifPref(true);
+      setNotifPermission("granted");
+      return;
+    }
+
+    // Permission is "default" — request it now (only valid in response to user gesture)
+    setNotifLoading(true);
+    try {
+      const result = await requestPermission();
+      setNotifPermission(result);
+      if (result === "granted") {
+        setUserNotifPref(true);
+        setNotifPref(true);
+      } else {
+        // User denied the prompt — respect their choice
+        setUserNotifPref(false);
+        setNotifPref(false);
+      }
+    } finally {
+      setNotifLoading(false);
+    }
+  };
 
   // Sync edit form on modal open
   useEffect(() => {
@@ -323,6 +414,106 @@ export default function Profile({ onBack }: ProfileProps) {
         >
           Edit profile
         </button>
+      </div>
+
+      {/* ═══════════ NOTIFICATION SETTINGS CARD ═══════════ */}
+      <div className="mx-4 mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 overflow-hidden">
+        {/* Card Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-zinc-800/60">
+          <div className="flex items-center gap-2.5">
+            {notifPref && notifPermission === "granted" ? (
+              <BellRing className="h-5 w-5 text-[#1d9bf0]" />
+            ) : (
+              <Bell className="h-5 w-5 text-zinc-400" />
+            )}
+            <div>
+              <h3 className="text-white font-bold text-[14px] leading-none">Keyword Notifications</h3>
+              <p className="text-zinc-500 text-[11.5px] mt-0.5">
+                Get notified for tweets about: {TRACKED_KEYWORDS.map((k) => `#${k}`).join(", ")}
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            id="notification-toggle"
+            type="button"
+            onClick={handleToggleNotifications}
+            disabled={!notifSupported || notifLoading || notifPermission === "denied"}
+            aria-label={notifPref ? "Disable tweet notifications" : "Enable tweet notifications"}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+              !notifSupported || notifPermission === "denied"
+                ? "cursor-not-allowed opacity-40 bg-zinc-700"
+                : notifPref
+                ? "bg-[#1d9bf0] cursor-pointer"
+                : "bg-zinc-700 cursor-pointer"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+                notifPref ? "translate-x-6" : "translate-x-1"
+              } ${notifLoading ? "animate-pulse" : ""}`}
+            />
+          </button>
+        </div>
+
+        {/* Permission Status Row */}
+        <div className="px-4 py-3">
+          {/* Case 1: Browser not supported */}
+          {!notifSupported && (
+            <div className="flex items-start gap-2 text-[12px] text-zinc-500">
+              <BellOff className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>Browser notifications are not supported in this browser. Try Chrome or Firefox.</span>
+            </div>
+          )}
+
+          {/* Case 2: Permission denied by browser */}
+          {notifSupported && notifPermission === "denied" && (
+            <div className="flex items-start gap-2 text-[12px]">
+              <span className="text-red-400 font-bold flex-shrink-0 mt-0.5">🔴</span>
+              <div>
+                <span className="text-red-400 font-semibold">Permission blocked by browser.</span>
+                <span className="text-zinc-500 ml-1">
+                  To enable, open your browser settings and allow notifications for this site.
+                </span>
+                <button
+                  onClick={() => window.open("chrome://settings/content/notifications", "_blank")}
+                  className="flex items-center gap-1 text-[#1d9bf0] hover:underline mt-1 cursor-pointer"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open browser notification settings
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Case 3: Permission not yet requested */}
+          {notifSupported && notifPermission === "default" && (
+            <div className="flex items-center gap-2 text-[12px] text-zinc-500">
+              <span className="text-yellow-400 font-bold">🟡</span>
+              <span>Notification permission not yet granted. Toggle on to request access.</span>
+            </div>
+          )}
+
+          {/* Case 4: Permission granted, notifications enabled */}
+          {notifSupported && notifPermission === "granted" && notifPref && (
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-emerald-400 font-bold">🟢</span>
+              <span className="text-emerald-400 font-semibold">Active —</span>
+              <span className="text-zinc-400">
+                you'll be notified for tweets mentioning {TRACKED_KEYWORDS.map((k) => `"${k}"`).join(" or ")}.
+              </span>
+            </div>
+          )}
+
+          {/* Case 5: Permission granted but user disabled preference */}
+          {notifSupported && notifPermission === "granted" && !notifPref && (
+            <div className="flex items-center gap-2 text-[12px] text-zinc-500">
+              <span className="text-zinc-400 font-bold">⚪</span>
+              <span>Notifications paused. Toggle on to resume keyword alerts.</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* User Metadata / Information section */}
