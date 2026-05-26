@@ -54,6 +54,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["Free", "Bronze", "Silver", "Gold"],
     default: "Free"
+  },
+  preferredLanguage: {
+    type: String,
+    default: "English"
   }
 }, { 
   timestamps: true,

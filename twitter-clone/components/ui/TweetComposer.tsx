@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "@/lib/i18n";
 import { 
   Image as ImageIcon, 
   Smile, 
@@ -19,6 +20,7 @@ interface TweetComposerProps {
 
 export default function TweetComposer({ onPost, onAudioPostSuccess }: TweetComposerProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
@@ -64,7 +66,7 @@ export default function TweetComposer({ onPost, onAudioPostSuccess }: TweetCompo
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What is happening?!"
+          placeholder={t("whats_happening")}
           className="w-full bg-transparent text-xl text-white outline-none border-none placeholder-zinc-500 resize-none h-20 py-1"
         />
         
@@ -137,7 +139,7 @@ export default function TweetComposer({ onPost, onAudioPostSuccess }: TweetCompo
               disabled={!content.trim() || isOverLimit || isTooShort || isPosting}
               className="bg-[#1d9bf0] disabled:bg-[#1d9bf0]/50 hover:bg-[#1a8cd8] disabled:pointer-events-none text-white font-bold px-4 py-1.5 rounded-full text-[14.5px] transition duration-200 cursor-pointer"
             >
-              {isPosting ? "Posting..." : "Post"}
+              {isPosting ? "Posting..." : t("post")}
             </button>
             
           </div>

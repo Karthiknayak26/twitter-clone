@@ -24,6 +24,8 @@ export interface User {
   website?: string;
   coverImage?: string;
   subscriptionPlan?: string;
+  preferredLanguage?: string;
+  phoneNumber?: string;
 }
 
 export interface AuthContextType {
@@ -37,6 +39,7 @@ export interface AuthContextType {
     website: string;
     avatar?: string;
     coverImage?: string;
+    phoneNumber?: string;
   }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -196,6 +199,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     website: string;
     avatar?: string;
     coverImage?: string;
+    phoneNumber?: string;
   }) => {
     if (!user) return;
     setIsLoading(true);
@@ -208,6 +212,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         website: profileData.website,
         avatar: profileData.avatar !== undefined ? profileData.avatar : user.avatar,
         coverImage: profileData.coverImage !== undefined ? profileData.coverImage : user.coverImage,
+        phoneNumber: profileData.phoneNumber !== undefined ? profileData.phoneNumber : (user as any).phoneNumber,
       };
 
       if (isFirebaseConfigured) {
@@ -227,6 +232,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           website: profileData.website,
           avatar: profileData.avatar !== undefined ? profileData.avatar : user.avatar,
           coverImage: profileData.coverImage !== undefined ? profileData.coverImage : user.coverImage,
+          phoneNumber: profileData.phoneNumber !== undefined ? profileData.phoneNumber : (user as any).phoneNumber,
         };
         setUser(updatedUser);
         localStorage.setItem("twiller-user", JSON.stringify(updatedUser));

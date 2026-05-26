@@ -14,10 +14,13 @@ import {
   BellOff,
   BellRing,
   ExternalLink,
-  Phone
+  Phone,
+  Globe
 } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
 import SubscriptionModal from "./SubscriptionModal";
+import LanguageVerifyModal from "./LanguageVerifyModal";
+import { useTranslation, Language } from "@/lib/i18n";
 import { 
   collection, 
   query, 
@@ -45,9 +48,14 @@ interface ProfileProps {
 
 export default function Profile({ onBack }: ProfileProps) {
   const { user, updateProfile } = useAuth();
+  const { t, currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState<"posts" | "replies" | "highlights" | "articles" | "media">("posts");
   const [profileTweets, setProfileTweets] = useState<TweetType[]>([]);
   
+  // Language Switch States
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [pendingLanguage, setPendingLanguage] = useState<Language>("English");
+
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -426,13 +434,13 @@ export default function Profile({ onBack }: ProfileProps) {
           onClick={() => setShowSubscriptionModal(true)}
           className="border border-purple-800/50 bg-transparent hover:bg-purple-900/10 text-[#c084fc] font-bold py-1.5 px-4 rounded-full text-[14px] transition cursor-pointer select-none"
         >
-          Upgrade Plan
+          {t("upgrade_plan")}
         </button>
         <button 
           onClick={() => setShowEditModal(true)}
           className="border border-zinc-700 bg-transparent hover:bg-zinc-900 text-white font-bold py-1.5 px-4 rounded-full text-[14px] transition cursor-pointer select-none"
         >
-          Edit profile
+          {t("edit_profile")}
         </button>
       </div>
 
@@ -447,7 +455,7 @@ export default function Profile({ onBack }: ProfileProps) {
               <Bell className="h-5 w-5 text-zinc-400" />
             )}
             <div>
-              <h3 className="text-white font-bold text-[14px] leading-none">Keyword Notifications</h3>
+              <h3 className="text-white font-bold text-[14px] leading-none">{t("notifications")}</h3>
               <p className="text-zinc-500 text-[11.5px] mt-0.5">
                 Get notified for tweets about: {TRACKED_KEYWORDS.map((k) => `#${k}`).join(", ")}
               </p>
@@ -533,6 +541,44 @@ export default function Profile({ onBack }: ProfileProps) {
               <span>Notifications paused. Toggle on to resume keyword alerts.</span>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ═══════════ LANGUAGE PREFERENCES CARD ═══════════ */}
+      <div className="mx-4 mb-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 overflow-hidden">
+        {/* Card Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-4 border-b border-zinc-800/60">
+          <div className="flex items-center gap-2.5">
+            <Globe className="h-5 w-5 text-[#1d9bf0]" />
+            <div>
+              <h3 className="text-white font-bold text-[14px] leading-none">{t("preferred_language")}</h3>
+              <p className="text-zinc-500 text-[11.5px] mt-0.5">
+                Current: <span className="text-blue-400 font-semibold">{currentLanguage}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Selector Dropdown */}
+          <div className="relative">
+            <select
+              value={currentLanguage}
+              onChange={(e) => {
+                const selectedLang = e.target.value as Language;
+                if (selectedLang !== currentLanguage) {
+                  setPendingLanguage(selectedLang);
+                  setIsLanguageModalOpen(true);
+                }
+              }}
+              className="bg-zinc-900 border border-zinc-800 text-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-blue-500 cursor-pointer transition-all"
+            >
+              <option value="English">English</option>
+              <option value="Spanish">Español (Spanish)</option>
+              <option value="Hindi">हिन्दी (Hindi)</option>
+              <option value="Portuguese">Português (Portuguese)</option>
+              <option value="Chinese">中文 (Chinese)</option>
+              <option value="French">Français (French)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -695,7 +741,7 @@ export default function Profile({ onBack }: ProfileProps) {
                 >
                   <X className="h-5 w-5" />
                 </button>
-                <h2 className="text-lg font-bold text-white leading-none">Edit profile</h2>
+                <h2 className="text-lg font-bold text-white leading-none">{t("edit_profile")}</h2>
               </div>
               <button
                 type="submit"
@@ -706,7 +752,7 @@ export default function Profile({ onBack }: ProfileProps) {
                 {isSaving ? (
                   <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <span>Save</span>
+                  <span>{t("save")}</span>
                 )}
               </button>
             </header>
@@ -838,7 +884,7 @@ export default function Profile({ onBack }: ProfileProps) {
 
                 {/* Phone Number */}
                 <div className="flex flex-col relative">
-                  <label className="text-zinc-500 text-[13px] font-semibold mb-1 ml-0.5 select-none">Phone Number</label>
+                  <label className="text-zinc-500 text-[13px] font-semibold mb-1 ml-0.5 select-none">{t("phone_number")}</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 select-none">
                       <Phone className="h-4 w-4" />
@@ -865,6 +911,16 @@ export default function Profile({ onBack }: ProfileProps) {
       <SubscriptionModal 
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
+      />
+
+      {/* Language Switch Verification Modal */}
+      <LanguageVerifyModal
+        isOpen={isLanguageModalOpen}
+        onClose={() => setIsLanguageModalOpen(false)}
+        targetLanguage={pendingLanguage}
+        onSuccess={(newLang) => {
+          console.log(`Language successfully switched to: ${newLang}`);
+        }}
       />
       
     </div>

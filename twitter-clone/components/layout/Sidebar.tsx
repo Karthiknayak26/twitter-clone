@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "@/lib/i18n";
 import { 
   Home as HomeIcon, 
   Search, 
@@ -21,6 +22,7 @@ interface SidebarProps {
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [showLogoutDropdown, setShowLogoutDropdown] = useState(false);
 
   const navigationItems = [
@@ -66,7 +68,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                   )}
                 </div>
                 <span className={`hidden xl:inline ${isActive ? "font-bold text-white" : "font-normal text-zinc-300"}`}>
-                  {item.name}
+                  {item.page === "home" ? t("home") : item.page === "profile" ? t("profile") : item.page === "notifications" ? t("notifications") : item.name}
                 </span>
               </button>
             );
@@ -75,7 +77,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
         {/* Large Post Button */}
         <button className="bg-[#1d9bf0] hover:bg-[#1a8cd8] text-white font-bold h-12 w-12 xl:h-13 xl:w-full rounded-full mt-4 flex items-center justify-center transition duration-200 shadow-md">
-          <span className="hidden xl:inline text-[17px]">Post</span>
+          <span className="hidden xl:inline text-[17px]">{t("post")}</span>
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-white fill-current xl:hidden">
             <path d="M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79.018 23 3 23 3zm-6.814 11.054C14.707 14.15 12 14.43 12 15c0 .57 2.707.85 4.186.946C15.17 18.018 12 19 9 19c-1.66 0-3 1.34-3 3H4c0-2.76 2.24-5 5-5 3 0 5.83-.982 7.186-2.946z"></path>
           </svg>

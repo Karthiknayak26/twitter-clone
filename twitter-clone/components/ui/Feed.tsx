@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "@/lib/i18n";
 import { Sparkles } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
 import TweetComposer from "./TweetComposer";
@@ -24,6 +25,7 @@ import SubscriptionModal from "./SubscriptionModal";
 
 export default function Feed() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // Local state for tweets (initialized with mock data or Express entries)
   const [tweets, setTweets] = useState<TweetType[]>([]);
@@ -246,7 +248,7 @@ export default function Feed() {
       {/* Feed Sticky Tabs Header */}
       <header className="sticky top-0 bg-black/85 backdrop-blur-md border-b border-zinc-800 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Home</h1>
+          <h1 className="text-xl font-bold tracking-tight">{t("home")}</h1>
           <Sparkles className="h-5 w-5 text-zinc-400 hover:text-[#1d9bf0] transition duration-200 cursor-pointer" />
         </div>
 
