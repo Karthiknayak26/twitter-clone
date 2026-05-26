@@ -41,6 +41,14 @@ const UserSchema = new mongoose.Schema({
   joinedDate: { 
     type: String, 
     default: "May 2026" 
+  },
+  phoneNumber: {
+    type: String,
+    default: ""
+  },
+  lastPasswordResetDate: {
+    type: Date,
+    default: null
   }
 }, { 
   timestamps: true,

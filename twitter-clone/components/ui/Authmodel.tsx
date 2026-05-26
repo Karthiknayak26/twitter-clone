@@ -251,6 +251,17 @@ export default function Authmodel({ isOpen, onClose, initialMode }: AuthModelPro
               {mode === "login" ? "Sign up" : "Sign in"}
             </button>
           </p>
+
+          {mode === "login" && (
+            <p className="text-[12.5px] text-zinc-500 text-center font-normal mt-2">
+              <a
+                href="/forgot-password"
+                className="text-[#1d9bf0] font-semibold hover:underline cursor-pointer"
+              >
+                Forgot password?
+              </a>
+            </p>
+          )}
           
           {/* Legal Terms Text at Bottom (Only in Sign Up Mode) */}
           {mode === "signup" && (

@@ -13,7 +13,8 @@ import {
   Bell,
   BellOff,
   BellRing,
-  ExternalLink
+  ExternalLink,
+  Phone
 } from "lucide-react";
 import TweetCard, { TweetType } from "./TweetCard";
 import { 
@@ -55,7 +56,8 @@ export default function Profile({ onBack }: ProfileProps) {
     location: "",
     website: "",
     avatar: "",
-    coverImage: ""
+    coverImage: "",
+    phoneNumber: ""
   });
 
   // ─── Notification Settings State ─────────────────────────────────────────
@@ -150,7 +152,8 @@ export default function Profile({ onBack }: ProfileProps) {
         location: user.location || "Earth",
         website: user.website || "example.com",
         avatar: user.avatar || "",
-        coverImage: user.coverImage || ""
+        coverImage: user.coverImage || "",
+        phoneNumber: (user as any).phoneNumber || ""
       });
     }
   }, [user, showEditModal]);
@@ -545,6 +548,12 @@ export default function Profile({ onBack }: ProfileProps) {
             <Calendar className="h-4 w-4 text-zinc-500" />
             <span>Joined August 2025</span>
           </div>
+          {(user as any).phoneNumber && (
+            <div className="flex items-center space-x-1">
+              <Phone className="h-4 w-4 text-zinc-500" />
+              <span>{(user as any).phoneNumber}</span>
+            </div>
+          )}
         </div>
 
         {/* Following & Followers counts */}
@@ -793,6 +802,23 @@ export default function Profile({ onBack }: ProfileProps) {
                       type="text"
                       value={editForm.website}
                       onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg py-2.5 pl-9 pr-4 text-white text-sm outline-none focus:border-[#1d9bf0] transition duration-150"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div className="flex flex-col relative">
+                  <label className="text-zinc-500 text-[13px] font-semibold mb-1 ml-0.5 select-none">Phone Number</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 select-none">
+                      <Phone className="h-4 w-4" />
+                    </span>
+                    <input
+                      type="tel"
+                      value={editForm.phoneNumber}
+                      onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                      placeholder="e.g. +1234567890"
                       className="w-full bg-black border border-zinc-800 rounded-lg py-2.5 pl-9 pr-4 text-white text-sm outline-none focus:border-[#1d9bf0] transition duration-150"
                     />
                   </div>

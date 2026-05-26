@@ -83,6 +83,18 @@ function maskEmail(email) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// HELPER: Generate a secure password containing only upper & lowercase alphabets
+// ────────────────────────────────────────────────────────────────────────────
+function generateRandomAlphaPassword(length = 12) {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let pwd = "";
+  for (let i = 0; i < length; i++) {
+    pwd += chars[crypto.randomInt(0, chars.length)];
+  }
+  return pwd;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // NODEMAILER TRANSPORTER
 // Falls back to console-only mode if EMAIL_USER/EMAIL_PASS not configured.
 // ────────────────────────────────────────────────────────────────────────────
@@ -444,7 +456,7 @@ app.get("/loggedinuser", async (req, res) => {
 // Update Profile Endpoint
 app.put("/profile", async (req, res) => {
   try {
-    const { userId, displayName, bio, location, website, avatar, coverImage } = req.body;
+    const { userId, displayName, bio, location, website, avatar, coverImage, phoneNumber } = req.body;
     if (!userId) {
       return res.status(400).send({ message: "User ID is required" });
     }
@@ -460,6 +472,7 @@ app.put("/profile", async (req, res) => {
     if (website !== undefined) user.website = website;
     if (avatar !== undefined) user.avatar = avatar;
     if (coverImage !== undefined) user.coverImage = coverImage;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
     
     await user.save();
     res.status(200).send(user);
@@ -467,6 +480,102 @@ app.put("/profile", async (req, res) => {
   } catch (error) {
     console.error("Profile update failure:", error);
     res.status(500).send(error);
+  }
+});
+
+// ── POST /forgot-password/request ─────────────────────────────────────────
+// Request: { identifier }
+// Response: { success, message, devPassword?, maskedEmail }
+app.post("/forgot-password/request", async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ error: "MISSING_FIELD", message: "Email or phone number is required" });
+    }
+
+    const cleanIdentifier = identifier.trim();
+
+    // Look up user by email (case-insensitive) OR exact phone number match
+    const user = await User.findOne({
+      $or: [
+        { email: cleanIdentifier.toLowerCase() },
+        { phoneNumber: cleanIdentifier }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ 
+        error: "USER_NOT_FOUND", 
+        message: "No account associated with that email or phone number was found." 
+      });
+    }
+
+    // Rate-limiting: once per 24 hours (1 day)
+    if (user.lastPasswordResetDate) {
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+      const msSinceLastReset = Date.now() - new Date(user.lastPasswordResetDate).getTime();
+      if (msSinceLastReset < oneDayInMs) {
+        return res.status(429).json({
+          error: "RATE_LIMIT",
+          message: "You can use this option only one time per day."
+        });
+      }
+    }
+
+    // Generate pure alpha password (uppercase + lowercase, no numbers/specials)
+    const newPassword = generateRandomAlphaPassword(12);
+
+    // Save password and timestamp in DB
+    user.password = newPassword;
+    user.lastPasswordResetDate = new Date();
+    await user.save();
+
+    // Send email via nodemailer
+    let emailResult = { devMode: true };
+    if (emailTransporter) {
+      try {
+        await emailTransporter.sendMail({
+          from: `"Twiller 🐦" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: "Your Account Password Reset Request",
+          html: `
+            <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; background: #000; color: #fff; padding: 32px; border-radius: 16px;">
+              <h2 style="color: #1d9bf0; margin: 0 0 16px;">🔑 Password Reset Successful</h2>
+              <p style="color: #aaa; margin: 0 0 24px;">Your Twiller password has been reset. Use the temporary password below to log in:</p>
+              <div style="background: #111; border: 1px solid #333; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px;">
+                <span style="font-size: 24px; font-weight: 800; color: #1d9bf0; font-family: monospace; letter-spacing: 2px;">${newPassword}</span>
+              </div>
+              <p style="color: #666; font-size: 13px; margin: 0;">
+                For security, we recommend changing this password after logging in.<br>
+                Please note: You are permitted to request a password reset <strong style="color: #aaa;">only once per day</strong>.
+              </p>
+            </div>
+          `,
+        });
+        emailResult = { devMode: false };
+      } catch (err) {
+        console.error("Nodemailer forgot-password email error:", err);
+      }
+    } else {
+      console.log(`\n📧 [DEV] Password Reset for ${user.email}: ${newPassword}\n`);
+    }
+
+    const payload = {
+      success: true,
+      message: "Password reset completed successfully. A temporary password has been generated.",
+      maskedEmail: maskEmail(user.email)
+    };
+
+    // Dev mode helper: return password directly in response payload so user can test without SMTP
+    if (emailResult.devMode) {
+      payload.devPassword = newPassword;
+      payload.devNote = "No SMTP settings. Password returned in response payload for dev testing.";
+    }
+
+    return res.status(200).json(payload);
+  } catch (err) {
+    console.error("Password reset error:", err);
+    return res.status(500).json({ error: "SERVER_ERROR", message: err.message });
   }
 });
 

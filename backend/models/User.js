@@ -52,6 +52,14 @@ const UserSchema = new mongoose.Schema({
       const options = { month: 'long', year: 'numeric' };
       return `Joined ${date.toLocaleDateString('en-US', options)}`;
     }
+  },
+  phoneNumber: {
+    type: String,
+    default: ""
+  },
+  lastPasswordResetDate: {
+    type: Date,
+    default: null
   }
 }, { 
   timestamps: true,
