@@ -14,8 +14,13 @@ const app = express();
 app.use(helmet());
 
 // CORS config (allow frontend domain only in prod)
+const allowedOrigins = ['http://localhost:3000'];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true,
 };
 app.use(cors(corsOptions));
