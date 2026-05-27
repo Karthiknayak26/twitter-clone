@@ -159,7 +159,7 @@ export const sendLanguageOtp = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: \`OTP sent successfully to your registered \${isEmail ? "email" : "mobile number"}.\`,
+      message: `OTP sent successfully to your registered ${isEmail ? "email" : "mobile number"}.`,
       destination: isEmail ? destination.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)) : destination.replace(/.(?=.{4})/g, "*"),
       isEmail,
       devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
@@ -175,7 +175,7 @@ export const verifyLanguageOtp = async (req, res, next) => {
     const { otp } = req.body;
     if (!otp) return next(new AppError('OTP is required', 400));
 
-    const redisKey = \`lang_otp:\${req.user.id}\`;
+    const redisKey = `lang_otp:${req.user.id}`;
     const storedDataStr = await redisClient.get(redisKey);
 
     if (!storedDataStr) {
@@ -206,7 +206,7 @@ export const verifyLanguageOtp = async (req, res, next) => {
       const ttl = await redisClient.ttl(redisKey);
       await redisClient.setEx(redisKey, ttl, JSON.stringify(storedData));
       
-      return res.status(400).json({ error: "WRONG_OTP", message: \`Invalid code. You have \${remaining} attempts remaining.\` });
+      return res.status(400).json({ error: "WRONG_OTP", message: `Invalid code. You have ${remaining} attempts remaining.` });
     }
 
     // Success!
@@ -218,7 +218,7 @@ export const verifyLanguageOtp = async (req, res, next) => {
     res.status(200).json({
       success: true,
       preferredLanguage: user.preferredLanguage,
-      message: \`Language successfully updated to \${user.preferredLanguage}.\`
+      message: `Language successfully updated to ${user.preferredLanguage}.`
     });
   } catch (err) {
     next(err);
