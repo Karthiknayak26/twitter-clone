@@ -209,7 +209,7 @@ export default function LoginVerifyModal({
             <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 text-center">
               Enter Verification Code
             </label>
-            <div className="flex justify-between gap-2.5">
+            <div className="flex justify-between gap-1.5 sm:gap-2.5">
               {otpArray.map((digit, idx) => (
                 <input
                   key={idx}
@@ -222,7 +222,7 @@ export default function LoginVerifyModal({
                   onChange={(e) => handleOtpChange(e.target.value, idx)}
                   onKeyDown={(e) => handleKeyDown(e, idx)}
                   disabled={loading || timeLeft <= 0 || attemptsRemaining <= 0}
-                  className="w-12 h-14 bg-zinc-900 border border-zinc-800 focus:border-blue-500 text-center text-xl font-bold text-white rounded-xl focus:outline-none transition-all duration-200"
+                  className="w-9 h-11 sm:w-12 sm:h-14 bg-zinc-900 border border-zinc-800 focus:border-blue-500 text-center text-lg sm:text-xl font-bold text-white rounded-xl focus:outline-none transition-all duration-200"
                 />
               ))}
             </div>

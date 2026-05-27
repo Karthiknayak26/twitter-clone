@@ -654,7 +654,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
               )}
 
               {/* 6 Digit input layout */}
-              <div className="flex justify-between max-w-sm mx-auto py-2">
+              <div className="flex justify-between gap-1.5 sm:gap-2.5 max-w-sm mx-auto py-2">
                 {otpInputs.map((val, idx) => (
                   <input
                     key={idx}
@@ -665,7 +665,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                     value={val}
                     onChange={(e) => handleOtpInputChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-11 h-12 bg-black border border-zinc-800 rounded-lg text-center font-bold text-lg text-[#1d9bf0] outline-none transition focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0]"
+                    className="w-9 h-11 sm:w-11 sm:h-12 bg-black border border-zinc-800 rounded-lg text-center font-bold text-base sm:text-lg text-[#1d9bf0] outline-none transition focus:border-[#1d9bf0] focus:ring-1 focus:ring-[#1d9bf0]"
                   />
                 ))}
               </div>

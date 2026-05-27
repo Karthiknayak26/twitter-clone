@@ -388,7 +388,7 @@ export default function Profile({ onBack }: ProfileProps) {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-1">
+          <h1 className="text-xl font-bold tracking-tight flex flex-wrap items-center gap-1">
             {user.displayName}
             <CheckCircle2 className="h-4.5 w-4.5 fill-[#1d9bf0] text-black stroke-[1.5]" />
             {user.subscriptionPlan === "Bronze" && (
@@ -600,7 +600,7 @@ export default function Profile({ onBack }: ProfileProps) {
         <div className="divide-y divide-zinc-900 max-h-60 overflow-y-auto">
           {user.loginHistory && user.loginHistory.length > 0 ? (
             [...user.loginHistory].reverse().slice(0, 5).map((session: any, idx: number) => (
-              <div key={idx} className="px-4 py-3 flex justify-between items-center hover:bg-zinc-900/30 transition-all select-none">
+              <div key={idx} className="px-4 py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center hover:bg-zinc-900/30 transition-all select-none gap-2 sm:gap-0">
                 <div className="flex flex-col text-left space-y-0.5">
                   <span className="font-semibold text-white text-xs flex items-center gap-1.5">
                     {session.browser === "Google Chrome" && <span className="text-blue-400 font-bold">🌐 Chrome</span>}
@@ -615,7 +615,7 @@ export default function Profile({ onBack }: ProfileProps) {
                     {session.device !== "mobile" && session.device !== "laptop" && session.device !== "desktop" && `🖥 ${session.device}`}
                   </span>
                 </div>
-                <div className="flex flex-col text-right space-y-0.5">
+                <div className="flex flex-col text-left sm:text-right space-y-0.5">
                   <span className="font-mono text-[10.5px] text-blue-400/90 font-semibold">{session.ipAddress}</span>
                   <span className="text-[9px] text-zinc-500">
                     {new Date(session.loginTime).toLocaleString(undefined, { 
@@ -639,7 +639,7 @@ export default function Profile({ onBack }: ProfileProps) {
       {/* User Metadata / Information section */}
       <div className="px-4 pb-4 space-y-3">
         <div>
-          <h2 className="text-xl font-extrabold text-white leading-tight flex items-center gap-1">
+          <h2 className="text-xl font-extrabold text-white leading-tight flex flex-wrap items-center gap-1">
             {user.displayName}
             <CheckCircle2 className="h-4.5 w-4.5 fill-[#1d9bf0] text-black stroke-[1.5]" />
             {user.subscriptionPlan === "Bronze" && (

@@ -12,12 +12,25 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.8",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "redis": "^5.12.1",
+    "socket.io": "^4.8.3",
+    "stripe": "^22.1.1",
+    "winston": "^3.19.0"
   }
 }
