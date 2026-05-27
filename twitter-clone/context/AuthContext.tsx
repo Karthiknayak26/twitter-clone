@@ -76,13 +76,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (firebaseuser?.email) {
           try {
             // 1. Fetch user record from Express Backend
-            const res = await axiosInstance.get("/loggedinuser", {
-              params: { email: firebaseuser.email }
-            });
+            const res = await axiosInstance.get("/api/v1/users/me");
 
-            if (res.data) {
-              setUser(res.data);
-              localStorage.setItem("twiller-user", JSON.stringify(res.data));
+            if (res.data?.data?.user) {
+              setUser(res.data.data.user);
+              localStorage.setItem("twiller-user", JSON.stringify(res.data.data.user));
             } else {
               // 2. Auto-register user if not in Express database yet (e.g., Google login)
               const newuser = {
@@ -93,10 +91,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 password: "google-auth-password"
               };
 
-              const regRes = await axiosInstance.post("/register", newuser);
-              if (regRes.data) {
-                setUser(regRes.data);
-                localStorage.setItem("twiller-user", JSON.stringify(regRes.data));
+              const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
+              if (regRes.data?.data?.user) {
+                setUser(regRes.data.data.user);
+                localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
+                if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
               }
             }
           } catch (err) {
@@ -165,7 +164,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // 2. Call backend pre-login to enforce daily time gates and browser verification checks
-      const preLoginRes = await axiosInstance.post("/auth/pre-login", {
+      const preLoginRes = await axiosInstance.post("/api/v1/auth/pre-login", {
         email,
         browser,
         os,
@@ -184,27 +183,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
 
-      // 4. Perform actual authentication
-      if (isFirebaseConfigured) {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const username = email.split("@")[0].toLowerCase();
-        const mockUser: User = {
-          id: Date.now().toString(),
-          username: username,
-          displayName: username.charAt(0).toUpperCase() + username.slice(1),
-          avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
-          bio: "Software developer passionate about building great products",
-          joinedDate: "May 2026",
-        };
-        setUser(mockUser);
-        localStorage.setItem("twiller-user", JSON.stringify(mockUser));
+      // 4. Perform actual authentication with Express API
+      const loginRes = await axiosInstance.post("/api/v1/auth/login", { email, password });
+      
+      if (loginRes.data?.data?.user) {
+        setUser(loginRes.data.data.user);
+        localStorage.setItem("twiller-user", JSON.stringify(loginRes.data.data.user));
+        if (loginRes.data.token) localStorage.setItem("twiller-token", loginRes.data.token);
       }
 
       // 5. Post-login session logging to store IP, browser, and device in MongoDB
       try {
-        await axiosInstance.post("/auth/log-session", {
+        await axiosInstance.post("/api/v1/auth/log-session", {
           email,
           browser,
           os,
@@ -230,31 +220,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const formattedUsername = username.replace("@", "").toLowerCase();
       
-      if (isFirebaseConfigured) {
-        // Create standard auth record in Firebase Auth
-        await createUserWithEmailAndPassword(auth, email, password);
-        
-        // Write profile details to our custom Express + MongoDB backend
-        const newuser = {
-          username: formattedUsername,
-          displayName: displayName,
-          email: email.toLowerCase(),
-          password: password,
-          avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${formattedUsername}`
-        };
-        await axiosInstance.post("/register", newuser);
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const mockUser: User = {
-          id: Date.now().toString(),
-          username: formattedUsername,
-          displayName: displayName,
-          avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${formattedUsername}`,
-          bio: "Software developer passionate about building great products",
-          joinedDate: "May 2026",
-        };
-        setUser(mockUser);
-        localStorage.setItem("twiller-user", JSON.stringify(mockUser));
+      // Write profile details to our custom Express + MongoDB backend
+      const newuser = {
+        username: formattedUsername,
+        displayName: displayName,
+        email: email.toLowerCase(),
+        password: password,
+        avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${formattedUsername}`
+      };
+      const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
+      
+      if (regRes.data?.data?.user) {
+        setUser(regRes.data.data.user);
+        localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
+        if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
       }
     } catch (error) {
       console.error("Signup failure:", error);
@@ -267,11 +246,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
+      setUser(null);
+      localStorage.removeItem("twiller-user");
+      localStorage.removeItem("twiller-token");
       if (isFirebaseConfigured) {
         await signOut(auth);
-      } else {
-        setUser(null);
-        localStorage.removeItem("twiller-user");
       }
     } catch (error) {
       console.error("Logout failure:", error);
@@ -303,27 +282,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         phoneNumber: profileData.phoneNumber !== undefined ? profileData.phoneNumber : (user as any).phoneNumber,
       };
 
-      if (isFirebaseConfigured) {
-        // Update user profile inside MongoDB Atlas
-        const res = await axiosInstance.put("/profile", updatedFields);
-        if (res.data) {
-          setUser(res.data);
-          localStorage.setItem("twiller-user", JSON.stringify(res.data));
-        }
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const updatedUser: User = {
-          ...user,
-          displayName: profileData.displayName,
-          bio: profileData.bio,
-          location: profileData.location,
-          website: profileData.website,
-          avatar: profileData.avatar !== undefined ? profileData.avatar : user.avatar,
-          coverImage: profileData.coverImage !== undefined ? profileData.coverImage : user.coverImage,
-          phoneNumber: profileData.phoneNumber !== undefined ? profileData.phoneNumber : (user as any).phoneNumber,
-        };
-        setUser(updatedUser);
-        localStorage.setItem("twiller-user", JSON.stringify(updatedUser));
+      // Update user profile inside MongoDB Atlas
+      const res = await axiosInstance.patch("/api/v1/users/updateMe", updatedFields);
+      if (res.data?.data?.user) {
+        setUser(res.data.data.user);
+        localStorage.setItem("twiller-user", JSON.stringify(res.data.data.user));
       }
     } catch (error) {
       console.error("Profile update failure:", error);
@@ -350,12 +313,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const syncUser = async () => {
     if (user?.email) {
       try {
-        const res = await axiosInstance.get("/loggedinuser", {
-          params: { email: user.email }
-        });
-        if (res.data) {
-          setUser(res.data);
-          localStorage.setItem("twiller-user", JSON.stringify(res.data));
+        const res = await axiosInstance.get("/api/v1/users/me");
+        if (res.data?.data?.user) {
+          setUser(res.data.data.user);
+          localStorage.setItem("twiller-user", JSON.stringify(res.data.data.user));
         }
       } catch (err) {
         console.error("Failed to sync user session:", err);

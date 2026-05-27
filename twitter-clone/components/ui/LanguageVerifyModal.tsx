@@ -80,7 +80,7 @@ export default function LanguageVerifyModal({
     setLoading(true);
     setErrorMsg("");
     try {
-      const res = await axiosInstance.post("/language/send-otp", {
+      const res = await axiosInstance.post("/api/v1/users/language/send-otp", {
         userId: user.id,
         targetLanguage
       });
@@ -150,7 +150,7 @@ export default function LanguageVerifyModal({
     setErrorMsg("");
 
     try {
-      const res = await axiosInstance.post("/language/verify-otp", {
+      const res = await axiosInstance.post("/api/v1/users/language/verify-otp", {
         userId: user.id,
         otp: fullOtp
       });

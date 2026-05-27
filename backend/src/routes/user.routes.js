@@ -3,7 +3,9 @@ import {
   getMe, 
   getUser, 
   updateMe, 
-  requestPasswordReset 
+  requestPasswordReset,
+  sendLanguageOtp,
+  verifyLanguageOtp
 } from '../controllers/user.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -18,5 +20,8 @@ router.use(protect);
 router.get('/me', getMe, getUser);
 router.patch('/updateMe', updateMe);
 router.get('/:id', getUser);
+
+router.post('/language/send-otp', sendLanguageOtp);
+router.post('/language/verify-otp', verifyLanguageOtp);
 
 export default router;

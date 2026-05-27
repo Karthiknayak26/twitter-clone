@@ -101,7 +101,7 @@ export default function LoginVerifyModal({
     setErrorMsg("");
 
     try {
-      const res = await axiosInstance.post("/auth/verify-login-otp", {
+      const res = await axiosInstance.post("/api/v1/auth/verify-login-otp", {
         email,
         otp: fullOtp
       });

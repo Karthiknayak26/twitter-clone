@@ -278,7 +278,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
     setDevOtp("");
     
     try {
-      const response = await axiosInstance.post("/audio/send-otp", { userId: user.id });
+      const response = await axiosInstance.post("/api/v1/tweets/audio/send-otp", { userId: user.id });
       if (response.data.success) {
         setMaskedEmail(response.data.maskedEmail);
         setTimer(response.data.expiresInSeconds || 300);
@@ -310,7 +310,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
     setOtpError("");
 
     try {
-      const response = await axiosInstance.post("/audio/verify-otp", {
+      const response = await axiosInstance.post("/api/v1/tweets/audio/verify-otp", {
         userId: user.id,
         otp
       });
@@ -506,22 +506,18 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
     setPostError(false as any);
 
     try {
-      const payload = {
-        audioToken,
-        userId: user.id,
-        content: caption.trim() || "🎙 Audio Tweet",
-        audioUrl: audioFileBase64,
-        audioDuration: audioDurationSeconds,
-        audioFileName: audioFile.name,
-        user: {
-          displayName: user.displayName,
-          username: user.username,
-          avatar: user.avatar,
-          isVerified: true
-        }
-      };
+      const formData = new FormData();
+      formData.append("audioToken", audioToken);
+      formData.append("userId", user.id);
+      formData.append("content", caption.trim() || "🎙 Audio Tweet");
+      formData.append("audioDuration", audioDurationSeconds.toString());
+      formData.append("audioFile", audioFile); // The actual File blob
 
-      const res = await axiosInstance.post("/audio/post", payload);
+      const res = await axiosInstance.post("/api/v1/tweets/audio/post", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       if (res.data) {
         onPostSuccess();
         handleResetAndClose();

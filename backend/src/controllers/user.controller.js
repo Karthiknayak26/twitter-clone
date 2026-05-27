@@ -101,3 +101,126 @@ export const requestPasswordReset = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── LANGUAGE OTP LOGIC ──
+
+export const sendLanguageOtp = async (req, res, next) => {
+  try {
+    const { targetLanguage } = req.body;
+    if (!targetLanguage) {
+      return next(new AppError('Target language is required', 400));
+    }
+
+    const validLanguages = ["English", "Spanish", "Hindi", "Portuguese", "Chinese", "French"];
+    if (!validLanguages.includes(targetLanguage)) {
+      return next(new AppError('Invalid target language', 400));
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    const redisKey = `lang_otp:${user._id}`;
+    
+    // Rate limit
+    const ttl = await redisClient.ttl(redisKey);
+    if (ttl > 270) {
+      return next(new AppError(`Please wait ${ttl - 270}s before requesting another OTP`, 429, 'RATE_LIMITED'));
+    }
+
+    let destination = "";
+    let isEmail = false;
+
+    if (targetLanguage === "French") {
+      destination = user.email;
+      isEmail = true;
+      if (!destination) {
+        return next(new AppError('User does not have an email registered', 400, 'MISSING_EMAIL'));
+      }
+    } else {
+      destination = user.phoneNumber;
+      isEmail = false;
+      if (!destination || destination.trim() === "") {
+        return next(new AppError('Please add a phone number to your Profile page before switching to this language.', 400, 'MISSING_PHONE'));
+      }
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    
+    const otpData = {
+      otp,
+      targetLanguage,
+      emailOrPhone: destination,
+      attempts: 0
+    };
+
+    await redisClient.setEx(redisKey, 300, JSON.stringify(otpData));
+
+    res.status(200).json({
+      success: true,
+      message: \`OTP sent successfully to your registered \${isEmail ? "email" : "mobile number"}.\`,
+      destination: isEmail ? destination.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)) : destination.replace(/.(?=.{4})/g, "*"),
+      isEmail,
+      devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+      expiresInSeconds: 300
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifyLanguageOtp = async (req, res, next) => {
+  try {
+    const { otp } = req.body;
+    if (!otp) return next(new AppError('OTP is required', 400));
+
+    const redisKey = \`lang_otp:\${req.user.id}\`;
+    const storedDataStr = await redisClient.get(redisKey);
+
+    if (!storedDataStr) {
+      return res.status(440).json({ error: "NO_OTP_FOUND", message: "No verification process is active. Please request a new code." });
+    }
+
+    const storedData = JSON.parse(storedDataStr);
+
+    if (storedData.attempts >= 3) {
+      await redisClient.del(redisKey);
+      return res.status(429).json({ error: "LOCKED_OUT", message: "Too many failed attempts. For security, please request a new verification code." });
+    }
+
+    const isMatch = crypto.timingSafeEqual(
+      Buffer.from(otp.toString().padStart(6, "0")),
+      Buffer.from(storedData.otp.padStart(6, "0"))
+    );
+
+    if (!isMatch) {
+      storedData.attempts += 1;
+      const remaining = 3 - storedData.attempts;
+      
+      if (remaining <= 0) {
+        await redisClient.del(redisKey);
+        return res.status(429).json({ error: "LOCKED_OUT", message: "Too many failed attempts. For security, please request a new verification code." });
+      }
+      
+      const ttl = await redisClient.ttl(redisKey);
+      await redisClient.setEx(redisKey, ttl, JSON.stringify(storedData));
+      
+      return res.status(400).json({ error: "WRONG_OTP", message: \`Invalid code. You have \${remaining} attempts remaining.\` });
+    }
+
+    // Success!
+    await redisClient.del(redisKey);
+    const user = await User.findById(req.user.id);
+    user.preferredLanguage = storedData.targetLanguage;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      preferredLanguage: user.preferredLanguage,
+      message: \`Language successfully updated to \${user.preferredLanguage}.\`
+    });
+  } catch (err) {
+    next(err);
+  }
+};

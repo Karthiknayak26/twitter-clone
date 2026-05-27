@@ -179,7 +179,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     try {
-      const response = await axiosInstance.post("/payments/checkout", {
+      const response = await axiosInstance.post("/api/v1/payments/checkout", {
         userId: user.id,
         plan: selectedPlan.id,
         price: selectedPlan.price

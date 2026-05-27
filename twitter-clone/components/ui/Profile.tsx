@@ -206,10 +206,10 @@ export default function Profile({ onBack }: ProfileProps) {
   const fetchProfileTweets = async () => {
     try {
       if (!user) return;
-      const res = await axiosInstance.get("/post");
-      if (res.data) {
+      const res = await axiosInstance.get("/api/v1/tweets");
+      if (res.data?.data?.tweets) {
         // Filter to only show user's tweets
-        const userTweets = res.data.filter((t: any) => t.user?.username === user.username);
+        const userTweets = res.data.data.tweets.filter((t: any) => t.user?.username === user.username);
         const mapped = userTweets.map((t: any) => ({
           id: t.id || t._id,
           user: {
@@ -259,7 +259,7 @@ export default function Profile({ onBack }: ProfileProps) {
     }));
 
     try {
-      await axiosInstance.post(`/post/${id}/like`, { userId: user.id });
+      await axiosInstance.post(`/api/v1/tweets/${id}/like`, { userId: user.id });
       fetchProfileTweets();
     } catch (error) {
       console.error("Like toggle failure:", error);
@@ -282,7 +282,7 @@ export default function Profile({ onBack }: ProfileProps) {
     }));
 
     try {
-      await axiosInstance.post(`/post/${id}/repost`, { userId: user.id });
+      await axiosInstance.post(`/api/v1/tweets/${id}/repost`, { userId: user.id });
       fetchProfileTweets();
     } catch (error) {
       console.error("Repost toggle failure:", error);
@@ -304,7 +304,7 @@ export default function Profile({ onBack }: ProfileProps) {
     }));
 
     try {
-      await axiosInstance.post(`/post/${id}/bookmark`, { userId: user.id });
+      await axiosInstance.post(`/api/v1/tweets/${id}/bookmark`, { userId: user.id });
       fetchProfileTweets();
     } catch (error) {
       console.error("Bookmark toggle failure:", error);
