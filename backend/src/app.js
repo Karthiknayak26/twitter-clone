@@ -65,7 +65,7 @@ app.use('/api/v1/tweets', tweetRouter);
 app.use('/api/v1/payments', paymentRouter);
 
 // 3. UNHANDLED ROUTES
-app.all('*', (req, res, next) => {
+app.all('(.*)', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
