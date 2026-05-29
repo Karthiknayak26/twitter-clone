@@ -98,7 +98,11 @@ export const translations = {
     invoice: "Invoice",
     transaction_id: "Transaction ID",
     amount_paid: "Amount Paid",
-    print_invoice: "Print Invoice"
+    print_invoice: "Print Invoice",
+    registered_email: "Registered Email",
+    payment_window: "Payment Window",
+    choose_posting_level: "Choose Premium Posting Level",
+    email_address: "Email Address"
   },
   Spanish: {
     home: "Inicio",
@@ -196,7 +200,11 @@ export const translations = {
     invoice: "Factura",
     transaction_id: "ID de transacción",
     amount_paid: "Monto pagado",
-    print_invoice: "Imprimir factura"
+    print_invoice: "Imprimir factura",
+    registered_email: "Correo registrado",
+    payment_window: "Ventana de pago",
+    choose_posting_level: "Elegir nivel de publicación premium",
+    email_address: "Dirección de correo electrónico"
   },
   Hindi: {
     home: "मुख्य पृष्ठ",
@@ -294,7 +302,11 @@ export const translations = {
     invoice: "चालान",
     transaction_id: "लेन-देन आईडी",
     amount_paid: "भुगतान की गई राशि",
-    print_invoice: "चालान प्रिंट करें"
+    print_invoice: "चालान प्रिंट करें",
+    registered_email: "पंजीकृत ईमेल",
+    payment_window: "भुगतान समय",
+    choose_posting_level: "प्रीमियम पोस्टिंग स्तर चुनें",
+    email_address: "ईमेल पता"
   },
   Portuguese: {
     home: "Início",
@@ -392,7 +404,11 @@ export const translations = {
     invoice: "Fatura",
     transaction_id: "ID da transação",
     amount_paid: "Valor pago",
-    print_invoice: "Imprimir fatura"
+    print_invoice: "Imprimir fatura",
+    registered_email: "E-mail registrado",
+    payment_window: "Janela de pagamento",
+    choose_posting_level: "Escolha o nível de postagem premium",
+    email_address: "Endereço de e-mail"
   },
   Chinese: {
     home: "首页",
@@ -490,7 +506,11 @@ export const translations = {
     invoice: "发票",
     transaction_id: "交易 ID",
     amount_paid: "支付金额",
-    print_invoice: "打印发票"
+    print_invoice: "打印发票",
+    registered_email: "注册邮箱",
+    payment_window: "支付时间段",
+    choose_posting_level: "选择高级发布级别",
+    email_address: "电子邮件地址"
   },
   French: {
     home: "Accueil",
@@ -588,7 +608,11 @@ export const translations = {
     invoice: "Facture",
     transaction_id: "ID de transaction",
     amount_paid: "Montant payé",
-    print_invoice: "Imprimer la facture"
+    print_invoice: "Imprimer la facture",
+    registered_email: "E-mail enregistré",
+    payment_window: "Plage de paiement",
+    choose_posting_level: "Choisir le niveau de publication premium",
+    email_address: "Adresse e-mail"
   }
 };
 
