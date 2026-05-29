@@ -97,7 +97,7 @@ export const preLogin = async (req, res, next) => {
       return res.status(200).json({
         requiresOtp: true,
         maskedEmail: user.email.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)),
-        devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+        devOtp: otp,
         expiresInSeconds: 300
       });
     }

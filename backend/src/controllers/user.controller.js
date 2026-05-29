@@ -162,7 +162,7 @@ export const sendLanguageOtp = async (req, res, next) => {
       message: `OTP sent successfully to your registered ${isEmail ? "email" : "mobile number"}.`,
       destination: isEmail ? destination.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)) : destination.replace(/.(?=.{4})/g, "*"),
       isEmail,
-      devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+      devOtp: otp,
       expiresInSeconds: 300
     });
   } catch (err) {

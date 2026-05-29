@@ -115,7 +115,7 @@ export const sendAudioOtp = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       maskedEmail: email.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)),
-      devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+      devOtp: otp,
       expiresInSeconds: 300
     });
   } catch (err) {
