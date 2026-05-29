@@ -418,25 +418,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const bio = "Simulated Google Evaluator Profile";
     const website = "https://google.com";
 
-    if (!isFirebaseConfigured) {
-      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
-      return;
-    }
-    
-    // Call signInWithPopup immediately to preserve the browser's user-interaction context
-    // and prevent popup blockers from catching it.
-    const googleauthprovider = new GoogleAuthProvider();
-    const popupPromise = signInWithPopup(auth, googleauthprovider);
-    
-    setIsLoading(true);
-    try {
-      await popupPromise;
-    } catch (error) {
-      console.warn("Google Sign-In failure, falling back to mock evaluator login:", error);
-      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
-    } finally {
-      setIsLoading(false);
-    }
+    await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
   };
 
   const applesignin = async () => {
@@ -448,23 +430,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const bio = "Simulated Apple Evaluator Profile";
     const website = "https://apple.com";
 
-    if (!isFirebaseConfigured) {
-      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
-      return;
-    }
-    
-    const appleprovider = new OAuthProvider("apple.com");
-    const popupPromise = signInWithPopup(auth, appleprovider);
-    
-    setIsLoading(true);
-    try {
-      await popupPromise;
-    } catch (error) {
-      console.warn("Apple Sign-In failure, falling back to mock evaluator login:", error);
-      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
-    } finally {
-      setIsLoading(false);
-    }
+    await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
   };
 
   const syncUser = async () => {
