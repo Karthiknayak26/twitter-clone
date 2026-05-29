@@ -9,6 +9,7 @@ import {
 } from '../controllers/tweet.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 import { uploadAudio } from '../config/cloudinary.js';
+import { validateAudioOtp } from '../middleware/validation.middleware.js';
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.post('/:id/bookmark', toggleInteraction('bookmarkedBy'));
 
 // Audio tweets
 router.post('/audio/send-otp', sendAudioOtp);
-router.post('/audio/verify-otp', verifyAudioOtp);
+router.post('/audio/verify-otp', validateAudioOtp, verifyAudioOtp);
 router.post('/audio/post', uploadAudio.single('audioFile'), postAudioTweet);
 
 export default router;

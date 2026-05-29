@@ -13,7 +13,8 @@ import {
   BookmarkCheck,
   Play,
   Pause,
-  Mic
+  Mic,
+  X
 } from "lucide-react";
 
 export interface TweetType {
@@ -48,6 +49,7 @@ interface TweetCardProps {
 }
 
 export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: TweetCardProps) {
+  const [isImageOpen, setIsImageOpen] = useState(false);
   
   // Custom audio player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -177,18 +179,24 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
             {tweet.content}
           </p>
 
-          {/* Optional inline media picture card */}
+          {/* Optional inline media picture card with zoom and lightbox toggle */}
           {tweet.image && (
-            <div className="mt-3 mb-1.5 rounded-2xl overflow-hidden border border-zinc-800">
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsImageOpen(true);
+              }}
+              className="mt-3 mb-1.5 rounded-2xl overflow-hidden border border-zinc-800/80 hover:border-zinc-700 hover:shadow-lg transition duration-200 group/image"
+            >
               <img
                 src={tweet.image}
                 alt="Tweet image"
-                className="w-full h-auto max-h-96 object-cover"
+                className="w-full h-auto max-h-96 object-cover hover:scale-[1.01] transition-transform duration-300"
               />
             </div>
           )}
 
-          {/* Optional premium customized Audio Player */}
+          {/* Optional premium customized Audio Player with Animated Visualizer */}
           {tweet.tweetType === "audio" && tweet.audioUrl && (
             <div 
               onClick={(e) => e.stopPropagation()} 
@@ -202,9 +210,9 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
                 className="h-9 w-9 bg-[#1d9bf0] hover:bg-[#1a8cd8] rounded-full flex items-center justify-center text-white transition cursor-pointer shadow-md shrink-0"
               >
                 {isPlaying ? (
-                  <Pause className="h-4 w-4 fill-current" />
+                  <Pause className="h-4 w-4 fill-current animate-scale-up" />
                 ) : (
-                  <Play className="h-4 w-4 fill-current ml-0.5" />
+                  <Play className="h-4 w-4 fill-current ml-0.5 animate-scale-up" />
                 )}
               </button>
 
@@ -214,6 +222,17 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
                   <span className="text-[11px] font-semibold text-[#1d9bf0] flex items-center gap-1 font-sans">
                     <Mic className="h-3 w-3 animate-pulse" /> Voice Note
                   </span>
+                  
+                  {/* CSS Bouncing digital waveform audio visualizer */}
+                  {isPlaying && (
+                    <div className="flex items-end space-x-0.5 h-3.5 pb-0.5 select-none shrink-0" aria-hidden="true">
+                      <span className="w-0.5 bg-[#1d9bf0] rounded-full animate-visualizer-1 h-3" />
+                      <span className="w-0.5 bg-[#1d9bf0] rounded-full animate-visualizer-2 h-4.5" />
+                      <span className="w-0.5 bg-[#1d9bf0] rounded-full animate-visualizer-3 h-2" />
+                      <span className="w-0.5 bg-[#1d9bf0] rounded-full animate-visualizer-4 h-3.5" />
+                    </div>
+                  )}
+
                   {tweet.audioFileName && (
                     <span className="text-zinc-500 text-[10px] truncate max-w-[150px] font-normal">
                       · {tweet.audioFileName}
@@ -240,18 +259,18 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
             </div>
           )}
 
-          {/* Footer toolbar buttons */}
+          {/* Footer toolbar buttons with spring/rotation micro-interactions */}
           <div className="flex justify-between max-w-md text-zinc-500 text-xs mt-3 select-none">
             
             {/* Reply icon */}
             <button className="flex items-center space-x-2 group hover:text-[#1d9bf0] transition duration-150">
               <span className="p-1.5 group-hover:bg-[#1d9bf0]/10 rounded-full transition duration-150">
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-4 w-4 transition-transform duration-200 group-active:scale-120" />
               </span>
               <span className="group-hover:text-[#1d9bf0]">{formatnumber(tweet.replies)}</span>
             </button>
             
-            {/* Repost button */}
+            {/* Repost button with rotating icon */}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -260,12 +279,12 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
               className={`flex items-center space-x-2 group transition duration-150 ${tweet.isReposted ? "text-emerald-500" : "hover:text-emerald-500"}`}
             >
               <span className="p-1.5 group-hover:bg-emerald-500/10 rounded-full transition duration-150">
-                <Repeat2 className={`h-4 w-4 ${tweet.isReposted ? "stroke-[2.5px]" : ""}`} />
+                <Repeat2 className={`h-4 w-4 transition-all duration-300 group-active:rotate-180 ${tweet.isReposted ? "stroke-[2.5px] scale-110" : ""}`} />
               </span>
               <span>{formatnumber(tweet.reposts)}</span>
             </button>
             
-            {/* Like trigger heart icon */}
+            {/* Like trigger heart icon with spring pop */}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -274,7 +293,7 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
               className={`flex items-center space-x-2 group transition duration-150 ${tweet.isLiked ? "text-pink-600" : "hover:text-pink-600"}`}
             >
               <span className="p-1.5 group-hover:bg-pink-500/10 rounded-full transition duration-150">
-                <Heart className={`h-4 w-4 ${tweet.isLiked ? "fill-pink-600 stroke-pink-600" : ""}`} />
+                <Heart className={`h-4 w-4 transition-all duration-200 group-active:scale-130 ${tweet.isLiked ? "fill-pink-600 stroke-pink-600 scale-110" : ""}`} />
               </span>
               <span>{formatnumber(tweet.likes)}</span>
             </button>
@@ -282,12 +301,12 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
             {/* Views indicator */}
             <button className="flex items-center space-x-2 group hover:text-[#1d9bf0] transition duration-150">
               <span className="p-1.5 group-hover:bg-[#1d9bf0]/10 rounded-full transition duration-150">
-                <BarChart2 className="h-4 w-4" />
+                <BarChart2 className="h-4 w-4 transition-transform duration-200 group-active:scale-120" />
               </span>
               <span>{tweet.views}</span>
             </button>
             
-            {/* Share / bookmark dropdown trigger */}
+            {/* Share / bookmark dropdown triggers */}
             <div className="flex space-x-1.5">
               <button 
                 onClick={(e) => {
@@ -297,19 +316,44 @@ export default function TweetCard({ tweet, onLike, onRepost, onBookmark }: Tweet
                 className={`p-1.5 rounded-full transition duration-150 ${tweet.isBookmarked ? "text-amber-500 hover:bg-amber-500/10" : "hover:text-amber-500 hover:bg-amber-500/10"}`}
               >
                 {tweet.isBookmarked ? (
-                  <BookmarkCheck className="h-4 w-4 fill-amber-500 stroke-amber-500" />
+                  <BookmarkCheck className="h-4 w-4 fill-amber-500 stroke-amber-500 scale-110 transition-transform duration-200 active:scale-125" />
                 ) : (
-                  <Bookmark className="h-4 w-4" />
+                  <Bookmark className="h-4 w-4 transition-transform duration-200 active:scale-125" />
                 )}
               </button>
               <button className="p-1.5 hover:text-[#1d9bf0] hover:bg-[#1d9bf0]/10 rounded-full transition duration-150">
-                <Share className="h-4 w-4" />
+                <Share className="h-4 w-4 transition-transform duration-200 active:scale-125" />
               </button>
             </div>
             
           </div>
         </div>
       </div>
+
+      {/* Premium Fullscreen Lightbox Modal */}
+      {isImageOpen && tweet.image && (
+        <div 
+          onClick={() => setIsImageOpen(false)}
+          className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 select-none animate-fade-in"
+        >
+          <button 
+            onClick={() => setIsImageOpen(false)}
+            className="absolute top-4 right-4 bg-zinc-900/60 hover:bg-zinc-800 text-white p-2 rounded-full border border-zinc-800 transition duration-150 backdrop-blur-sm shadow-lg cursor-pointer flex items-center justify-center"
+            aria-label="Close fullscreen view"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          
+          <div className="max-w-[90vw] max-h-[90vh] overflow-hidden rounded-2xl border border-zinc-850 shadow-2xl animate-scale-up">
+            <img 
+              src={tweet.image} 
+              alt="Fullscreen view" 
+              className="max-w-[90vw] max-h-[90vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </article>
   );
 }

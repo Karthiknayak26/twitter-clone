@@ -88,6 +88,32 @@ export function setUserNotifPref(enabled: boolean): void {
   }
 }
 
+/**
+ * Syncs the notification preference to the backend MongoDB.
+ * Call this after setUserNotifPref to persist across devices.
+ */
+export async function syncNotifPrefToBackend(enabled: boolean): Promise<void> {
+  try {
+    const axios = (await import("@/lib/axiosInstance")).default;
+    await axios.patch("/api/v1/users/notifications/preference", { enabled });
+  } catch (err) {
+    console.error("Failed to sync notification preference to backend:", err);
+  }
+}
+
+/**
+ * Loads notification preference from a user profile object (from backend).
+ * Syncs localStorage to match the server-side preference.
+ */
+export function loadNotifPrefFromUser(user: { notificationsEnabled?: boolean } | null): boolean {
+  if (!user || typeof user.notificationsEnabled !== "boolean") {
+    return getUserNotifPref(); // fallback to localStorage
+  }
+  // Sync localStorage with backend value
+  setUserNotifPref(user.notificationsEnabled);
+  return user.notificationsEnabled;
+}
+
 // ─── Keyword Detection ───────────────────────────────────────────────────────
 
 /**

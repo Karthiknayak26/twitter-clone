@@ -3,7 +3,7 @@ import User from '../models/User.model.js';
 import AppError from '../utils/AppError.js';
 import crypto from 'crypto';
 import redisClient from '../config/redis.js';
-import { io } from '../../server.js';
+import { getIo } from '../utils/socket.js';
 import logger from '../utils/logger.js';
 
 // Helper for Audio Time Window Checking
@@ -54,7 +54,7 @@ export const createTweet = async (req, res, next) => {
     });
 
     // Real-time broadcast
-    io.emit('new_tweet', newTweet);
+    getIo()?.emit('new_tweet', newTweet);
 
     res.status(201).json({ status: 'success', data: { tweet: newTweet } });
   } catch (err) {
@@ -220,7 +220,7 @@ export const postAudioTweet = async (req, res, next) => {
     await redisClient.del(`audio_token:${audioToken}`);
 
     // Real-time broadcast
-    io.emit('new_tweet', newTweet);
+    getIo()?.emit('new_tweet', newTweet);
 
     res.status(201).json({ status: 'success', data: { tweet: newTweet } });
   } catch (err) {
@@ -248,7 +248,7 @@ export const toggleInteraction = (field) => async (req, res, next) => {
     await tweet.save();
     
     // Broadcast update
-    io.emit('tweet_updated', tweet);
+    getIo()?.emit('tweet_updated', tweet);
 
     res.status(200).json({ status: 'success', data: { tweet } });
   } catch (err) {

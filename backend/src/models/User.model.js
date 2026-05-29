@@ -85,6 +85,14 @@ const UserSchema = new mongoose.Schema({
     default: "English",
     enum: ["English", "Spanish", "Hindi", "Portuguese", "Chinese", "French"]
   },
+  notificationsEnabled: {
+    type: Boolean,
+    default: false
+  },
+  isOAuthUser: {
+    type: Boolean,
+    default: false
+  },
   loginHistory: [{
     browser: String,
     os: String,

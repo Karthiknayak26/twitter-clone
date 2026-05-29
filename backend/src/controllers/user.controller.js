@@ -224,3 +224,31 @@ export const verifyLanguageOtp = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── NOTIFICATION PREFERENCE ──
+
+export const updateNotificationPref = async (req, res, next) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return next(new AppError('enabled must be a boolean value', 400));
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { notificationsEnabled: enabled },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { notificationsEnabled: user.notificationsEnabled }
+    });
+  } catch (err) {
+    next(err);
+  }
+};

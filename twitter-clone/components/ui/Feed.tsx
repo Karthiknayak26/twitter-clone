@@ -121,8 +121,8 @@ export default function Feed() {
 
   // Mutations for Post/Like/Repost
   const postMutation = useMutation({
-    mutationFn: async (text: string) => {
-      const payload = { content: text };
+    mutationFn: async ({ text, image }: { text: string, image?: string }) => {
+      const payload = { content: text, image: image || "" };
       const res = await axiosInstance.post("/api/v1/tweets", payload);
       return res.data;
     },
@@ -161,9 +161,9 @@ export default function Feed() {
     },
   });
 
-  const handleComposerPost = (text: string) => {
+  const handleComposerPost = (text: string, image?: string) => {
     if (!user) return;
-    postMutation.mutate(text);
+    postMutation.mutate({ text, image });
   };
 
   const refetchTweets = () => queryClient.invalidateQueries({ queryKey: ['tweets'] });

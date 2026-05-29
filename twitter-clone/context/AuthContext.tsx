@@ -1,17 +1,32 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  OAuthProvider
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
 import LoginVerifyModal from "@/components/ui/LoginVerifyModal";
+
+/** Generate a cryptographically random password for OAuth users */
+function generateOAuthPassword(): string {
+  const array = new Uint8Array(48);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array);
+  } else {
+    // Fallback: generate random chars
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+}
 
 export interface User {
   id: string;
@@ -46,6 +61,7 @@ export interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   googlesignin: () => Promise<void>;
+  applesignin: () => Promise<void>;
   syncUser: () => Promise<void>;
 }
 
@@ -76,26 +92,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (firebaseuser?.email) {
           try {
             // 1. Fetch user record from Express Backend
-            const res = await axiosInstance.get("/api/v1/users/me");
+            let expressUser = null;
+            try {
+              const res = await axiosInstance.get("/api/v1/users/me");
+              expressUser = res.data?.data?.user;
+            } catch (fetchErr) {
+              // Expected to fail on first sign-in if no token exists yet
+              console.log("No existing session found, attempting to register/login via OAuth...");
+            }
 
-            if (res.data?.data?.user) {
-              setUser(res.data.data.user);
-              localStorage.setItem("twiller-user", JSON.stringify(res.data.data.user));
+            if (expressUser) {
+              setUser(expressUser);
+              localStorage.setItem("twiller-user", JSON.stringify(expressUser));
             } else {
-              // 2. Auto-register user if not in Express database yet (e.g., Google login)
-              const newuser = {
-                username: firebaseuser.email.split("@")[0].toLowerCase(),
-                displayName: firebaseuser.displayName || "User",
-                avatar: firebaseuser.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${firebaseuser.email.split("@")[0]}`,
-                email: firebaseuser.email,
-                password: "google-auth-password"
-              };
+              // 2. Try to log in first (if returning user on new device)
+              try {
+                const loginRes = await axiosInstance.post("/api/v1/auth/login", {
+                  email: firebaseuser.email,
+                  password: generateOAuthPassword() // OAuth login uses register/upsert, not password login
+                });
+                
+                if (loginRes.data?.data?.user) {
+                  setUser(loginRes.data.data.user);
+                  localStorage.setItem("twiller-user", JSON.stringify(loginRes.data.data.user));
+                  if (loginRes.data.token) localStorage.setItem("twiller-token", loginRes.data.token);
+                }
+              } catch (loginErr) {
+                // 3. Auto-register user if login fails (new user)
+                const newuser = {
+                  username: firebaseuser.email.split("@")[0].toLowerCase() + Math.floor(Math.random() * 10000), // Ensure unique username
+                  displayName: firebaseuser.displayName || "User",
+                  avatar: firebaseuser.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${firebaseuser.email.split("@")[0]}`,
+                  email: firebaseuser.email,
+                  password: generateOAuthPassword()
+                };
 
-              const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
-              if (regRes.data?.data?.user) {
-                setUser(regRes.data.data.user);
-                localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
-                if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
+                const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
+                if (regRes.data?.data?.user) {
+                  setUser(regRes.data.data.user);
+                  localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
+                  if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
+                }
               }
             }
           } catch (err) {
@@ -298,12 +335,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const googlesignin = async () => {
     if (!isFirebaseConfigured) return;
+    
+    // Call signInWithPopup immediately to preserve the browser's user-interaction context
+    // and prevent popup blockers from catching it.
+    const googleauthprovider = new GoogleAuthProvider();
+    const popupPromise = signInWithPopup(auth, googleauthprovider);
+    
     setIsLoading(true);
     try {
-      const googleauthprovider = new GoogleAuthProvider();
-      await signInWithPopup(auth, googleauthprovider);
+      await popupPromise;
     } catch (error) {
       console.error("Google Sign-In failure:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applesignin = async () => {
+    if (!isFirebaseConfigured) return;
+    
+    const appleprovider = new OAuthProvider("apple.com");
+    const popupPromise = signInWithPopup(auth, appleprovider);
+    
+    setIsLoading(true);
+    try {
+      await popupPromise;
+    } catch (error) {
+      console.error("Apple Sign-In failure:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -325,7 +384,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, updateProfile, logout, isLoading, googlesignin, syncUser }}>
+    <AuthContext.Provider value={{ user, login, signup, updateProfile, logout, isLoading, googlesignin, applesignin, syncUser }}>
       {children}
       {loginOtpInfo && (
         <LoginVerifyModal

@@ -35,7 +35,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-16 sm:w-20 xl:w-64 flex flex-col justify-between py-4 border-r border-zinc-800 sticky h-screen top-0 bg-black select-none z-20">
+    <aside className="w-16 sm:w-20 xl:w-[275px] xl:pr-4 flex flex-col justify-between py-4 border-r border-zinc-800 sticky h-screen top-0 bg-black select-none z-20">
       <div className="flex flex-col items-center xl:items-start space-y-2">
         
         {/* X Logo */}
@@ -67,7 +67,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                     </span>
                   )}
                 </div>
-                <span className={`hidden xl:inline ${isActive ? "font-bold text-white" : "font-normal text-zinc-300"}`}>
+                <span className={`hidden xl:inline whitespace-nowrap ${isActive ? "font-bold text-white" : "font-normal text-zinc-300"}`}>
                   {item.page === "home" ? t("home") : item.page === "profile" ? t("profile") : item.page === "notifications" ? t("notifications") : item.name}
                 </span>
               </button>

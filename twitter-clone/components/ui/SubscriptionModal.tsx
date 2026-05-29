@@ -13,6 +13,7 @@ import {
   getISTTimeString,
   formatTimeRemaining
 } from "@/lib/paymentService";
+import { useTranslation } from "@/lib/i18n";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -81,6 +82,7 @@ const PLANS: PlanConfig[] = [
 
 export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   const { user, syncUser } = useAuth();
+  const { t } = useTranslation();
   
   // Modal navigation states
   const [step, setStep] = useState<ModalStep>("pricing");
@@ -185,16 +187,29 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         price: selectedPlan.price
       });
 
-      if (response.data.success) {
-        setInvoice(response.data.invoice || response.data.devInvoice);
-        setIsDevMode(!!response.data.devInvoice);
+      // If backend returns a Stripe session URL, redirect to it
+      if (response.data.sessionUrl) {
+        window.location.href = response.data.sessionUrl;
+        return;
+      }
+
+      // Dev mode fallback: backend returned a simulated invoice
+      if (response.data.status === 'success' || response.data.success) {
+        setInvoice(response.data.invoice || response.data.devInvoice || {
+          plan: selectedPlan.id,
+          price: selectedPlan.price,
+          transactionId: `DEV-${Date.now().toString(36).toUpperCase()}`,
+          date: new Date().toLocaleDateString(),
+          customerEmail: user.email || 'N/A'
+        });
+        setIsDevMode(true);
         setStep("success");
         // Sync context state immediately
         await syncUser();
       }
     } catch (err: any) {
       console.error(err);
-      setCheckoutError(err.response?.data?.message || "Simulated payment checkout failed. Please try again.");
+      setCheckoutError(err.response?.data?.message || "Payment checkout failed. Please try again.");
       setStep("checkout");
     } finally {
       setIsSubmitting(false);
@@ -210,7 +225,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         <header className="px-6 py-4 border-b border-zinc-900 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Sparkles className="h-5 w-5 text-[#8b5cf6] animate-pulse" />
-            <h3 className="font-bold text-white text-base">Twiller Premium Subscriptions</h3>
+            <h3 className="font-bold text-white text-base">{t("upgrade_title") || "Twiller Premium Subscriptions"}</h3>
           </div>
           
           <button 
@@ -224,7 +239,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
         {/* Live IST clock information banner */}
         <div className="bg-zinc-950 px-6 py-2.5 border-b border-zinc-900 flex justify-between items-center text-xs">
           <span className="text-zinc-500 font-medium flex items-center gap-1 font-sans select-none">
-            <Clock className="h-3.5 w-3.5 text-purple-500" /> Payment IST Window: <strong className="text-zinc-350">10:00 AM – 11:00 AM IST</strong>
+            <Clock className="h-3.5 w-3.5 text-purple-500" /> {t("payment_window") || "Payment IST Window"}: <strong className="text-zinc-350">10:00 AM – 11:00 AM IST</strong>
           </span>
           <span className={`font-mono font-bold select-none px-2 py-0.5 rounded ${isGateOpen ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
             {isGateOpen ? "🟢 Window Open" : "🔴 Closed"} · {istTime}
@@ -240,9 +255,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               
               {/* Promo Pitch Header */}
               <div className="text-center space-y-1">
-                <h4 className="text-lg font-bold text-white leading-snug">Choose your Premium Posting Level</h4>
+                <h4 className="text-lg font-bold text-white leading-snug">{t("choose_posting_level") || "Choose your Premium Posting Level"}</h4>
                 <p className="text-xs text-zinc-500 max-w-md mx-auto">
-                  Expand your posting capacity and unlock visual badges by selecting a premium plan.
+                  {t("upgrade_desc") || "Expand your posting capacity and unlock visual badges by selecting a premium plan."}
                 </p>
               </div>
 
@@ -260,7 +275,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{plan.name}</span>
                           {user?.subscriptionPlan === plan.id && (
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded border border-emerald-500/20">Current</span>
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded border border-emerald-500/20">{t("current_plan") || "Current"}</span>
                           )}
                         </div>
 
@@ -306,7 +321,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <div className="p-3.5 bg-red-950/20 border border-red-900/30 rounded-xl flex items-start space-x-2.5 text-xs text-red-400 max-w-lg mx-auto leading-normal">
                   <Lock className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-white">Subscription Upgrades Restricted:</strong> Outside the payment time window (10:00 AM – 11:00 AM IST), checkouts are blocked. Please return when the gate opens in <strong className="text-white font-mono">{countdownText}</strong>!
+                    <strong className="text-white">{t("downgrade_blocked") || "Subscription Upgrades Restricted"}:</strong> {t("payment_closed") || "Outside the payment time window (10:00 AM – 11:00 AM IST), checkouts are blocked. Please return when the gate opens!"}
                   </div>
                 </div>
               )}
@@ -320,7 +335,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               {/* Plan Summary Card */}
               <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-2xl flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-zinc-500 text-xs uppercase tracking-wider">Purchase Summary</span>
+                  <span className="text-zinc-500 text-xs uppercase tracking-wider">{t("invoice") || "Purchase Summary"}</span>
                   <span className="text-white text-base font-bold mt-0.5">{selectedPlan.name} Subscription</span>
                   <span className="text-zinc-400 text-xs font-semibold mt-0.5">{selectedPlan.limit}</span>
                 </div>
@@ -336,7 +351,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 {/* Heading */}
                 <div className="flex items-center space-x-2 text-zinc-400 text-xs font-bold uppercase tracking-wider pb-1">
                   <CreditCard className="h-4 w-4 text-[#8b5cf6]" />
-                  <span>Twiller Card Sandbox Payment</span>
+                  <span>{t("checkout_secure") || "Twiller Sandbox Payment"}</span>
                 </div>
 
                 <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-2xl space-y-4">
@@ -401,13 +416,13 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     onClick={() => setStep("pricing")}
                     className="flex-1 bg-transparent hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white font-bold py-2.5 rounded-full text-xs transition cursor-pointer"
                   >
-                    Cancel Upgrade
+                    {t("cancel") || "Cancel Upgrade"}
                   </button>
                   <button
                     type="submit"
                     className="flex-1 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2.5 rounded-full text-xs transition flex items-center justify-center space-x-2 cursor-pointer shadow-[0_4px_15px_rgba(139,92,246,0.2)]"
                   >
-                    <span>Confirm Simulated Payment</span>
+                    <span>{t("buy_now") || "Confirm Payment"}</span>
                   </button>
                 </div>
 
@@ -430,9 +445,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 </div>
               </div>
               <div className="space-y-1.5 text-center select-none">
-                <h4 className="text-white font-bold text-base">Processing Simulated Payment...</h4>
+                <h4 className="text-white font-bold text-base">{t("processing_payment") || "Processing Simulated Payment..."}</h4>
                 <p className="text-zinc-500 text-xs max-w-xs mx-auto">
-                  Authorizing transactional parameters against the 10:00 AM – 11:00 AM IST daily gate checks. Please wait.
+                  Authorizing transactional parameters. Please wait.
                 </p>
               </div>
             </div>
@@ -447,9 +462,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <h4 className="text-base font-bold text-white leading-tight">Plan Upgrade Completed Successfully!</h4>
+                <h4 className="text-base font-bold text-white leading-tight">{t("payment_success") || "Plan Upgrade Completed Successfully!"}</h4>
                 <p className="text-zinc-500 text-xs">
-                  Your posting limits have been expanded immediately.
+                  {t("payment_success_desc") || "Your posting limits have been expanded immediately."}
                 </p>
               </div>
 
@@ -460,7 +475,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <div className="flex justify-between items-start">
                   <div>
                     <h5 className="text-white font-bold text-[14px]">🐦 Twiller Premium</h5>
-                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Subscription Invoice</span>
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest">{t("invoice") || "Subscription Invoice"}</span>
                   </div>
                   <span className="text-xs bg-[#8b5cf6]/10 text-[#8b5cf6] font-bold px-2 py-0.5 rounded border border-[#8b5cf6]/20 select-none">
                     {invoice.plan} Plan
@@ -472,11 +487,11 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <table className="w-full border-collapse font-sans text-xs">
                   <tbody>
                     <tr className="border-b border-zinc-900">
-                      <td className="py-2 text-zinc-500">Transaction ID</td>
+                      <td className="py-2 text-zinc-500">{t("transaction_id") || "Transaction ID"}</td>
                       <td className="py-2 text-right font-mono text-zinc-300 select-all">{invoice.transactionId}</td>
                     </tr>
                     <tr className="border-b border-zinc-900">
-                      <td className="py-2 text-zinc-500">Amount Paid</td>
+                      <td className="py-2 text-zinc-500">{t("amount_paid") || "Amount Paid"}</td>
                       <td className="py-2 text-right font-bold text-emerald-400">₹{invoice.price}</td>
                     </tr>
                     <tr className="border-b border-zinc-900">
@@ -484,7 +499,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                       <td className="py-2 text-right text-zinc-300">{invoice.date}</td>
                     </tr>
                     <tr>
-                      <td className="py-2 text-zinc-500">Customer Registered Email</td>
+                      <td className="py-2 text-zinc-500">{t("registered_email") || "Customer Registered Email"}</td>
                       <td className="py-2 text-right text-zinc-300 truncate max-w-[150px]">{invoice.customerEmail}</td>
                     </tr>
                   </tbody>
@@ -508,7 +523,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 onClick={handleCloseModal}
                 className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2.5 rounded-full text-xs transition cursor-pointer select-none shadow-[0_4px_12px_rgba(139,92,246,0.3)]"
               >
-                Close and Return to Feed
+                {t("cancel") || "Close and Return"}
               </button>
 
             </div>

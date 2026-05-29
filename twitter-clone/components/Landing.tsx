@@ -7,7 +7,7 @@ import { useTranslation, Language } from "@/lib/i18n";
 import { Globe } from "lucide-react";
 
 export default function Landing() {
-  const { login } = useAuth();
+  const { login, googlesignin, applesignin } = useAuth();
   const { t, currentLanguage, changeGuestLanguage } = useTranslation();
   
   // Modal states
@@ -78,7 +78,7 @@ export default function Landing() {
           {/* Sign up with Google */}
           <button 
             disabled={isSubmitting}
-            onClick={() => handleQuickLogin("google.user@gmail.com")}
+            onClick={() => googlesignin()}
             className="flex items-center justify-center space-x-2.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-semibold py-2.5 px-4 rounded-full text-[14px] transition duration-200 border border-transparent shadow-sm cursor-pointer"
           >
             {isSubmitting ? (
@@ -112,7 +112,7 @@ export default function Landing() {
           {/* Sign up with Apple */}
           <button 
             disabled={isSubmitting}
-            onClick={() => handleQuickLogin("apple.user@icloud.com")}
+            onClick={() => applesignin()}
             className="flex items-center justify-center space-x-2.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-semibold py-2.5 px-4 rounded-full text-[14px] transition duration-200 border border-transparent shadow-sm cursor-pointer"
           >
             {isSubmitting ? (

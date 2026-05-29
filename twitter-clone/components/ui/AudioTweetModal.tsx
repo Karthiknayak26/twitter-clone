@@ -16,6 +16,7 @@ import {
   formatTimeRemaining,
   getISTTimeString
 } from "@/lib/audioService";
+import { useTranslation } from "@/lib/i18n";
 
 interface AudioTweetModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ type Step = "time-check" | "send-otp" | "enter-otp" | "input-audio" | "post-audi
 
 export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: AudioTweetModalProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // Navigation & step states
   const [step, setStep] = useState<Step>("time-check");
@@ -541,7 +543,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
         <header className="px-5 py-4 border-b border-zinc-900 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Mic className="h-5 w-5 text-[#1d9bf0] animate-pulse" />
-            <h3 className="font-bold text-white text-base">New Audio Tweet</h3>
+            <h3 className="font-bold text-white text-base">{t("new_audio_tweet") || t("audio_tweet") || "New Audio Tweet"}</h3>
           </div>
           
           <button 
@@ -563,15 +565,15 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                 <Lock className="h-4.5 w-4.5 text-zinc-900 fill-amber-500 absolute bottom-3 right-3 stroke-[2.5px]" />
               </div>
               <div className="space-y-2">
-                <h4 className="text-lg font-bold text-white">Audio Posting Time Window Locked</h4>
+                <h4 className="text-lg font-bold text-white">{t("audio_window_closed") || "Audio Posting Time Window Locked"}</h4>
                 <p className="text-sm text-zinc-400 max-w-sm">
-                  Audio tweets are only permitted between <strong className="text-white">2:00 PM and 7:00 PM IST</strong> to maintain controlled feature usage.
+                  {t("audio_window_closed") || "Audio tweets are only permitted between 2:00 PM and 7:00 PM IST to maintain controlled feature usage."}
                 </p>
               </div>
 
               {/* Cool countdown badge */}
               <div className="bg-zinc-950 border border-zinc-800 px-5 py-3 rounded-xl flex flex-col items-center">
-                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Time Remaining</span>
+                <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">{t("expires_in") || "Time Remaining"}</span>
                 <span className="text-white font-mono text-2xl font-bold mt-1 tracking-tight">
                   {countdownText}
                 </span>
@@ -584,15 +586,15 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
           {step === "send-otp" && (
             <div className="space-y-6 py-2">
               <div className="space-y-2">
-                <h4 className="text-lg font-bold text-white">Secure OTP Verification</h4>
+                <h4 className="text-lg font-bold text-white">{t("audio_otp_req") || "Secure OTP Verification"}</h4>
                 <p className="text-sm text-zinc-400">
-                  Before sharing audio contents, please verify your identity via a 6-digit OTP sent to your registered email address.
+                  {t("audio_otp_sent") || "Before sharing audio contents, please verify your identity via a 6-digit OTP sent to your registered email address."}
                 </p>
               </div>
 
               <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-xl flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-zinc-500 text-xs">Registered Email</span>
+                  <span className="text-zinc-500 text-xs">{t("registered_email") || "Registered Email"}</span>
                   <span className="text-white font-medium text-sm mt-0.5 select-all">
                     {user?.email ? user.email : "Loading email profile..."}
                   </span>
@@ -617,10 +619,10 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                 {isSendingOtp ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>Sending OTP...</span>
+                    <span>{t("verifying") || "Sending OTP..."}</span>
                   </>
                 ) : (
-                  <span>Send Verification Code</span>
+                  <span>{t("resend_code") || "Send Verification Code"}</span>
                 )}
               </button>
             </div>
@@ -630,9 +632,9 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
           {step === "enter-otp" && (
             <div className="space-y-6 py-2">
               <div className="space-y-2">
-                <h4 className="text-lg font-bold text-white">Enter Security Code</h4>
+                <h4 className="text-lg font-bold text-white">{t("verification_code") || "Enter Security Code"}</h4>
                 <p className="text-sm text-zinc-400">
-                  We've sent a 6-digit OTP code to <strong className="text-zinc-200">{maskedEmail || "your email"}</strong>.
+                  {t("otp_sent_to") || "We've sent a 6-digit OTP code to"} <strong className="text-zinc-200">{maskedEmail || "your email"}</strong>.
                 </p>
               </div>
 
@@ -640,10 +642,10 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
               {devOtp && (
                 <div className="p-3 bg-[#1d9bf0]/10 border border-[#1d9bf0]/30 rounded-xl flex flex-col space-y-1">
                   <span className="text-[#1d9bf0] text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 fill-[#1d9bf0] text-[#030712]" /> Dev Mode Helper
+                    <CheckCircle2 className="h-3.5 w-3.5 fill-[#1d9bf0] text-[#030712]" /> {t("dev_panel") || "Dev Mode Helper"}
                   </span>
                   <p className="text-zinc-400 text-xs leading-normal">
-                    SMTP not configured in server environment. Enter this developer code below:
+                    {t("dev_otp_desc") || "SMTP not configured in server environment. Enter this developer code below:"}
                   </p>
                   <span className="font-mono text-[#1d9bf0] text-lg font-bold select-all tracking-wider pt-1">{devOtp}</span>
                 </div>
@@ -669,12 +671,12 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
               <div className="flex justify-between items-center text-xs px-1">
                 <span className="text-zinc-500 flex items-center gap-1 font-mono">
                   <Clock className="h-3.5 w-3.5" />
-                  Code expires in: <span className={timer < 60 ? "text-red-500 font-bold" : "text-zinc-300 font-medium"}>
+                  {t("expires_in") || "Code expires in"}: <span className={timer < 60 ? "text-red-500 font-bold" : "text-zinc-300 font-medium"}>
                     {formatDuration(timer)}
                   </span>
                 </span>
                 <span className="text-zinc-500">
-                  Attempts remaining: <strong className="text-zinc-300 font-bold">{attemptsRemaining}</strong>
+                  {t("attempts_remaining") || "Attempts remaining"}: <strong className="text-zinc-300 font-bold">{attemptsRemaining}</strong>
                 </span>
               </div>
 
@@ -694,10 +696,10 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                   {isVerifyingOtp ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Verifying Code...</span>
+                      <span>{t("verifying") || "Verifying Code..."}</span>
                     </>
                   ) : (
-                    <span>Verify and Authenticate</span>
+                    <span>{t("verify_code") || "Verify and Authenticate"}</span>
                   )}
                 </button>
 
@@ -707,9 +709,9 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                   className="w-full bg-transparent hover:bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 font-bold py-2 rounded-full text-sm transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
                 >
                   {resendCooldown > 0 ? (
-                    <span>Resend Code ({resendCooldown}s)</span>
+                    <span>{t("resend_code") || "Resend Code"} ({resendCooldown}s)</span>
                   ) : (
-                    <span>Resend Code</span>
+                    <span>{t("resend_code") || "Resend Code"}</span>
                   )}
                 </button>
               </div>
@@ -726,19 +728,19 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                   onClick={() => setInputTab("record")}
                   className={`flex-1 pb-3 text-sm font-bold border-b-2 text-center transition cursor-pointer ${inputTab === "record" ? "border-[#1d9bf0] text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
                 >
-                  🎙 Record Live Voice
+                  {t("record_tab") || "🎙 Record Live Voice"}
                 </button>
                 <button
                   onClick={() => setInputTab("upload")}
                   className={`flex-1 pb-3 text-sm font-bold border-b-2 text-center transition cursor-pointer ${inputTab === "upload" ? "border-[#1d9bf0] text-[#1d9bf0]" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
                 >
-                  📁 Upload Audio File
+                  {t("upload_tab") || "📁 Upload Audio File"}
                 </button>
               </div>
 
               {/* Limits Warning badge */}
               <div className="p-3 bg-zinc-950 border border-zinc-900 rounded-xl flex justify-between items-center text-xs">
-                <span className="text-zinc-500">Audio Guidelines:</span>
+                <span className="text-zinc-500">{t("audio_guidelines") || "Audio Guidelines"}:</span>
                 <div className="flex space-x-3 text-zinc-300">
                   <span className="flex items-center gap-1 font-semibold"><Clock className="h-3.5 w-3.5 text-[#1d9bf0]" /> Max 5 Mins</span>
                   <span className="flex items-center gap-1 font-semibold"><Music className="h-3.5 w-3.5 text-[#1d9bf0]" /> Max 100 MB</span>
@@ -770,7 +772,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                         {/* Red pulsating circle */}
                         <div className="flex items-center space-x-2">
                           <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping"></span>
-                          <span className="text-xs text-red-400 font-bold uppercase tracking-wider">Recording voice...</span>
+                          <span className="text-xs text-red-400 font-bold uppercase tracking-wider">{t("recording_voice") || "Recording voice..."}</span>
                         </div>
                         <span className="text-white font-mono text-3xl font-bold mt-1.5 tracking-tight">
                           {formatDuration(recordingDuration)}
@@ -791,9 +793,9 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                       </div>
                       
                       <div className="space-y-1">
-                        <p className="text-white font-semibold">Tap to Record Audio</p>
+                        <p className="text-white font-semibold">{t("record_press") || "Tap to Record Audio"}</p>
                         <p className="text-zinc-500 text-xs max-w-xs">
-                          Grant microphone access. Your stream is authenticated and secure.
+                          {t("mic_access_desc") || "Grant microphone access. Your stream is authenticated and secure."}
                         </p>
                       </div>
 
@@ -802,7 +804,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                         disabled={micPermissionDenied || !mediaRecorderSupported}
                         className="bg-[#1d9bf0] hover:bg-[#1a8cd8] disabled:bg-zinc-800 disabled:pointer-events-none text-white font-bold px-6 py-3 rounded-full text-sm transition-all flex items-center gap-2 cursor-pointer shadow-[0_4px_15px_rgba(29,155,240,0.2)]"
                       >
-                        <Mic className="h-4 w-4" /> Start Voice Recording
+                        <Mic className="h-4 w-4" /> {t("record_tab") || "Start Voice Recording"}
                       </button>
                     </div>
                   )}
@@ -829,8 +831,8 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-white font-semibold text-sm">Drag & Drop audio file here</p>
-                      <p className="text-zinc-500 text-xs">or click to browse local files</p>
+                      <p className="text-white font-semibold text-sm">{t("upload_press") || "Drag & Drop audio file here"}</p>
+                      <p className="text-zinc-500 text-xs">{t("or_click_browse") || "or click to browse local files"}</p>
                     </div>
 
                     <p className="text-zinc-600 text-[10.5px] mt-6">
@@ -848,11 +850,11 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
               
               {/* Optional Caption Editor */}
               <div className="space-y-1.5 text-left">
-                <label className="text-zinc-400 text-xs font-semibold ml-0.5">Tweet Caption (Optional)</label>
+                <label className="text-zinc-400 text-xs font-semibold ml-0.5">{t("caption_label") || "Tweet Caption (Optional)"}</label>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value.slice(0, 280))}
-                  placeholder="Describe your audio tweet..."
+                  placeholder={t("caption_placeholder") || "Describe your audio tweet..."}
                   rows={3}
                   className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none resize-none transition focus:border-[#1d9bf0]"
                 />
@@ -947,7 +949,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                   }}
                   className="flex-1 bg-transparent hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white font-bold py-2.5 rounded-full text-sm transition cursor-pointer"
                 >
-                  Discard Audio
+                  {t("discard") || "Discard Audio"}
                 </button>
                 <button
                   onClick={postAudioTweet}
@@ -957,10 +959,10 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
                   {isPosting ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Posting Tweet...</span>
+                      <span>{t("posting") || "Posting Tweet..."}</span>
                     </>
                   ) : (
-                    <span>Post Audio Tweet</span>
+                    <span>{t("posting_audio") || "Post Audio Tweet"}</span>
                   )}
                 </button>
               </div>

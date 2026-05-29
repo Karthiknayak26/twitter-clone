@@ -47,11 +47,15 @@ app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// Data sanitization against NoSQL query injection
+import { nosqlSanitize } from './middleware/nosql.middleware.js';
+app.use(nosqlSanitize);
+
 // Cookie parser
 app.use(cookieParser());
 
 // Root verification diagnostic endpoint
-app.get('/health', (req, res) => {
+app.get(['/', '/health'], (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Twiller Enterprise API is running optimally.'

@@ -1,7 +1,12 @@
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set!');
+}
+
 const signToken = id => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_for_dev_only', {
+  return jwt.sign({ id }, JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '90d'
   });
 };
@@ -14,7 +19,8 @@ export const createSendToken = (user, statusCode, res) => {
       Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 90) * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
-    // secure: process.env.NODE_ENV === 'production' // uncomment in prod with HTTPS
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   };
 
   res.cookie('jwt', token, cookieOptions);

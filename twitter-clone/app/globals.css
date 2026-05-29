@@ -139,3 +139,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Premium Voice Tweet Bouncing Waveform Keyframes */
+@keyframes bounce-bar {
+  0%, 100% {
+    transform: scaleY(0.2);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-visualizer-1 {
+  animation: bounce-bar 0.6s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+.animate-visualizer-2 {
+  animation: bounce-bar 0.9s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+.animate-visualizer-3 {
+  animation: bounce-bar 0.5s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+.animate-visualizer-4 {
+  animation: bounce-bar 0.7s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}

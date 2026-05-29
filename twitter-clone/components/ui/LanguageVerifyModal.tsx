@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { X, ShieldCheck, Mail, Phone, Lock, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
+import { useTranslation } from "@/lib/i18n";
 
 interface LanguageVerifyModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function LanguageVerifyModal({
   onSuccess
 }: LanguageVerifyModalProps) {
   const { user, syncUser } = useAuth();
+  const { t } = useTranslation();
   const [step, setStep] = useState<ModalStep>("requesting");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -224,9 +226,9 @@ export default function LanguageVerifyModal({
             <div className="relative mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 border border-blue-500/30">
               <RefreshCw className="h-8 w-8 text-blue-400 animate-spin" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Requesting Code</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t("requesting_code")}</h3>
             <p className="text-zinc-400 text-sm max-w-xs">
-              Contacting Twiller security services to issue an OTP code for language: <strong className="text-blue-400 font-semibold">{targetLanguage}</strong>...
+              {t("contacting_security")} <strong className="text-blue-400 font-semibold">{targetLanguage}</strong>...
             </p>
           </div>
         )}
@@ -243,14 +245,14 @@ export default function LanguageVerifyModal({
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Language Verification</h3>
-                <p className="text-xs text-zinc-400 font-medium">Switching to {targetLanguage}</p>
+                <h3 className="text-lg font-bold text-white">{t("lang_verification")}</h3>
+                <p className="text-xs text-zinc-400 font-medium">{t("switching_to")} {targetLanguage}</p>
               </div>
             </div>
 
             <p className="text-sm text-zinc-300 mb-4 leading-relaxed">
-              We have sent a 6-digit security code to your registered{" "}
-              <strong className="text-white font-semibold">{isEmail ? "Email Address" : "Mobile Number"}</strong>:
+              {t("otp_desc")}{" "}
+              <strong className="text-white font-semibold">{isEmail ? t("email_address") || "Email Address" : t("phone_number") || "Mobile Number"}</strong>:
               <span className="block mt-1 font-mono text-blue-400 text-base font-semibold tracking-wider">
                 {destination}
               </span>
@@ -261,13 +263,10 @@ export default function LanguageVerifyModal({
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-4 text-sm text-blue-400">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-ping" />
-                  <span className="font-semibold text-xs tracking-wider uppercase">Evaluator Dev Panel</span>
+                  <span className="font-semibold text-xs tracking-wider uppercase">{t("dev_panel")}</span>
                 </div>
                 <p className="mb-2 text-zinc-300 text-xs font-medium">
-                  {isEmail 
-                    ? "Dev mode fallback active. Simulated Email OTP is:"
-                    : "Dev mode fallback active. Simulated SMS OTP is:"
-                  }
+                  {t("dev_otp_desc")}
                 </p>
                 <div className="flex items-center justify-between bg-black/40 border border-blue-500/30 rounded-lg px-3 py-1.5">
                   <span className="font-mono text-lg font-bold tracking-widest text-blue-300">{devOtp}</span>
@@ -276,7 +275,7 @@ export default function LanguageVerifyModal({
                     onClick={handleAutoFill} 
                     className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-semibold"
                   >
-                    Auto-fill
+                    {t("autofill")}
                   </button>
                 </div>
               </div>
@@ -294,7 +293,7 @@ export default function LanguageVerifyModal({
               {/* Digit fields */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 text-center">
-                  Verification Code
+                  {t("verification_code")}
                 </label>
                 <div className="flex justify-between gap-1.5 sm:gap-2.5">
                   {otpArray.map((digit, idx) => (
@@ -318,9 +317,9 @@ export default function LanguageVerifyModal({
               {/* Extra Metadata (Countdown, Attempts) */}
               <div className="flex justify-between items-center text-xs text-zinc-400 font-medium">
                 <div className="flex items-center gap-1">
-                  <Lock className="h-3 w.5" />
+                  <Lock className="h-3 w-3" />
                   <span>
-                    Expires in:{" "}
+                    {t("expires_in")}:{" "}
                     <span className={`font-semibold ${timeLeft < 60 ? "text-red-400 animate-pulse" : "text-zinc-300"}`}>
                       {formatTime(timeLeft)}
                     </span>
@@ -328,7 +327,7 @@ export default function LanguageVerifyModal({
                 </div>
                 {attemptsRemaining > 0 && attemptsRemaining < 3 && (
                   <span className="text-amber-400 font-semibold">
-                    {attemptsRemaining} attempt{attemptsRemaining !== 1 ? "s" : ""} remaining
+                    {attemptsRemaining} {t("attempts_remaining")}
                   </span>
                 )}
               </div>
@@ -341,14 +340,14 @@ export default function LanguageVerifyModal({
                   disabled={loading || timeLeft > 270} // block resend within 30s
                   className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 font-semibold py-2.5 rounded-xl text-sm transition-all disabled:opacity-50"
                 >
-                  Resend Code
+                  {t("resend_code")}
                 </button>
                 <button
                   type="submit"
                   disabled={loading || timeLeft <= 0 || attemptsRemaining <= 0}
                   className="flex-1 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-2.5 rounded-xl text-sm hover:from-blue-600 hover:to-sky-600 shadow-lg shadow-blue-500/20 active:scale-98 transition-all disabled:opacity-50"
                 >
-                  {loading ? "Verifying..." : "Verify Code"}
+                  {loading ? t("verifying") : t("verify_code")}
                 </button>
               </div>
             </form>
@@ -362,13 +361,13 @@ export default function LanguageVerifyModal({
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
               <div className="absolute inset-0 rounded-full border-4 border-emerald-400/20 animate-ping" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Verification Successful!</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t("verify_success")}</h3>
             <p className="text-zinc-400 text-sm max-w-xs leading-relaxed mb-1">
-              You have securely verified your profile.
+              {t("securely_verified")}
             </p>
             <p className="text-emerald-400 text-sm font-semibold flex items-center gap-1.5 justify-center">
               <Sparkles className="h-4 w-4 text-emerald-400 animate-spin" />
-              Translating interface into <strong className="underline decoration-wavy">{targetLanguage}</strong>...
+              {t("translating_interface")} <strong className="underline decoration-wavy">{targetLanguage}</strong>...
             </p>
           </div>
         )}
@@ -379,11 +378,11 @@ export default function LanguageVerifyModal({
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 mb-4">
               <AlertCircle className="h-6 w-6 text-red-500" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Action Required</h3>
+            <h3 className="text-lg font-bold text-white mb-2">{t("action_required")}</h3>
             <p className="text-sm text-zinc-300 leading-relaxed mb-6">
-              To switch to <strong className="text-blue-400">{targetLanguage}</strong>, we must authenticate your identity via an OTP sent to your registered mobile number.
+              {t("missing_phone_desc")}
               <span className="block mt-2 font-medium text-zinc-400">
-                You do not have a phone number configured in your Twiller profile yet.
+                {t("missing_phone_sub")}
               </span>
             </p>
 
@@ -393,14 +392,14 @@ export default function LanguageVerifyModal({
                 onClick={onClose}
                 className="w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-2.5 rounded-xl text-sm hover:from-blue-600 hover:to-sky-600 transition-all text-center"
               >
-                Go to Profile Page to Add Phone
+                {t("go_to_profile")}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="w-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white font-semibold py-2.5 rounded-xl text-sm transition-all"
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>

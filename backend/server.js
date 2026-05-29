@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 import app from './src/app.js';
@@ -12,7 +12,6 @@ process.on('uncaughtException', err => {
   process.exit(1);
 });
 
-dotenv.config();
 
 const port = process.env.PORT || 5000;
 const url = process.env.MONGO_URI || process.env.MONGODB_URL;
@@ -28,6 +27,9 @@ const io = new Server(server, {
     credentials: true,
   }
 });
+
+import { setIo } from './src/utils/socket.js';
+setIo(io);
 
 // Setup socket connections
 import socketHandler from './src/sockets/index.js';

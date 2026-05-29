@@ -24,11 +24,11 @@ export default function ForgotPasswordPage() {
     setDevPassword("");
 
     try {
-      const response = await axiosInstance.post("/forgot-password/request", {
+      const response = await axiosInstance.post("/api/v1/users/forgot-password/request", {
         identifier: identifier.trim()
       });
 
-      if (response.data.success) {
+      if (response.data.status === 'success') {
         setSuccess(true);
         setMaskedEmail(response.data.maskedEmail);
         

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, ShieldCheck, Mail, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
+import { useTranslation } from "@/lib/i18n";
 
 interface LoginVerifyModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export default function LoginVerifyModal({
   devOtp,
   onSuccess
 }: LoginVerifyModalProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [otpArray, setOtpArray] = useState<string[]>(Array(6).fill(""));
@@ -162,13 +164,13 @@ export default function LoginVerifyModal({
             <Mail className="h-5 w-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Chrome Auth Verification</h3>
-            <p className="text-xs text-zinc-400 font-medium">Verify your identity to log in</p>
+            <h3 className="text-lg font-bold text-white">{t("chrome_auth")}</h3>
+            <p className="text-xs text-zinc-400 font-medium">{t("verify_identity_login")}</p>
           </div>
         </div>
 
         <p className="text-sm text-zinc-300 mb-4 leading-relaxed">
-          Google Chrome browser detected. We have sent a secure 6-digit login code to your registered email:
+          {t("chrome_detected_desc")}
           <span className="block mt-1 font-mono text-blue-400 text-sm font-semibold tracking-wider">
             {email}
           </span>
@@ -179,10 +181,10 @@ export default function LoginVerifyModal({
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-4 text-sm text-blue-400">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-ping" />
-              <span className="font-semibold text-xs tracking-wider uppercase">Grader Security Panel</span>
+              <span className="font-semibold text-xs tracking-wider uppercase">{t("grader_panel")}</span>
             </div>
             <p className="mb-2 text-zinc-300 text-xs font-medium">
-              Simulated Chrome login OTP sent to email:
+              {t("simulated_otp_email")}
             </p>
             <div className="flex items-center justify-between bg-black/40 border border-blue-500/30 rounded-lg px-3 py-1.5">
               <span className="font-mono text-lg font-bold tracking-widest text-blue-300">{devOtp}</span>
@@ -191,7 +193,7 @@ export default function LoginVerifyModal({
                 onClick={handleAutoFill} 
                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-semibold"
               >
-                Auto-fill
+                {t("autofill")}
               </button>
             </div>
           </div>
@@ -207,7 +209,7 @@ export default function LoginVerifyModal({
         <form onSubmit={handleVerify} className="space-y-6">
           <div>
             <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 text-center">
-              Enter Verification Code
+              {t("verification_code")}
             </label>
             <div className="flex justify-between gap-1.5 sm:gap-2.5">
               {otpArray.map((digit, idx) => (
@@ -232,7 +234,7 @@ export default function LoginVerifyModal({
             <div className="flex items-center gap-1">
               <Lock className="h-3.5 w-3.5" />
               <span>
-                Code expires:{" "}
+                {t("expires_in")}:{" "}
                 <span className={`font-semibold ${timeLeft < 60 ? "text-red-400 animate-pulse" : "text-zinc-300"}`}>
                   {formatTime(timeLeft)}
                 </span>
@@ -240,7 +242,7 @@ export default function LoginVerifyModal({
             </div>
             {attemptsRemaining > 0 && attemptsRemaining < 3 && (
               <span className="text-amber-400 font-semibold animate-pulse">
-                {attemptsRemaining} attempt{attemptsRemaining !== 1 ? "s" : ""} remaining
+                {attemptsRemaining} {t("attempts_remaining")}
               </span>
             )}
           </div>
@@ -252,14 +254,14 @@ export default function LoginVerifyModal({
               disabled={loading}
               className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white font-semibold py-2.5 rounded-xl text-sm transition-all"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={loading || timeLeft <= 0 || attemptsRemaining <= 0}
               className="flex-1 bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-2.5 rounded-xl text-sm hover:from-blue-600 hover:to-sky-600 shadow-lg shadow-blue-500/20 active:scale-98 transition-all disabled:opacity-50"
             >
-              {loading ? "Verifying..." : "Verify Login"}
+              {loading ? t("verifying") : t("verify_login")}
             </button>
           </div>
         </form>

@@ -1,12 +1,20 @@
 import Stripe from 'stripe';
+import nodemailer from 'nodemailer';
 import User from '../models/User.model.js';
 import AppError from '../utils/AppError.js';
 import logger from '../utils/logger.js';
 
-// Requires STRIPE_SECRET_KEY in .env
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16', // Use latest API version
-});
+// Requires STRIPE_SECRET_KEY in .env (may be null in dev mode)
+let stripe;
+try {
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
+  }
+} catch (err) {
+  logger.warn('Stripe initialization failed — running in dev/simulated mode.');
+}
 
 // Helper for IST time check
 const isWithinPaymentISTWindow = () => {
@@ -27,6 +35,59 @@ const planPrices = {
   Gold: process.env.STRIPE_PRICE_GOLD
 };
 
+// Plan pricing for dev mode invoices
+const planPricing = {
+  Bronze: 100,
+  Silver: 300,
+  Gold: 1000
+};
+
+// ── Invoice Email Helper ──
+const sendInvoiceEmail = async (user, plan, transactionId) => {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    logger.warn(`📧 [DEV MODE] Invoice email skipped — EMAIL_USER/EMAIL_PASS not configured.`);
+    logger.info(`📧 Invoice for ${user.email}: Plan=${plan}, TxID=${transactionId}, Price=₹${planPricing[plan] || 'N/A'}`);
+    return;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: emailUser, pass: emailPass }
+    });
+
+    const mailOptions = {
+      from: `"Twiller Premium" <${emailUser}>`,
+      to: user.email,
+      subject: `🎉 Twiller ${plan} Plan — Subscription Invoice`,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background: #0a0a0a; color: #fff; border-radius: 16px;">
+          <h2 style="color: #8b5cf6; margin-bottom: 4px;">🐦 Twiller Premium</h2>
+          <p style="color: #71717a; font-size: 12px; margin-top: 0;">Subscription Invoice</p>
+          <hr style="border: 1px solid #27272a;" />
+          <table style="width: 100%; font-size: 14px; color: #d4d4d8;">
+            <tr><td style="padding: 8px 0; color: #71717a;">Plan</td><td style="text-align: right; font-weight: bold;">${plan}</td></tr>
+            <tr><td style="padding: 8px 0; color: #71717a;">Amount</td><td style="text-align: right; color: #34d399; font-weight: bold;">₹${planPricing[plan] || 'N/A'}</td></tr>
+            <tr><td style="padding: 8px 0; color: #71717a;">Transaction ID</td><td style="text-align: right; font-family: monospace; font-size: 12px;">${transactionId}</td></tr>
+            <tr><td style="padding: 8px 0; color: #71717a;">Date</td><td style="text-align: right;">${new Date().toLocaleDateString()}</td></tr>
+            <tr><td style="padding: 8px 0; color: #71717a;">Customer</td><td style="text-align: right;">${user.email}</td></tr>
+          </table>
+          <hr style="border: 1px solid #27272a;" />
+          <p style="color: #71717a; font-size: 11px; text-align: center;">Thank you for subscribing to Twiller Premium!</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    logger.info(`📧 Invoice email sent to ${user.email} for ${plan} plan.`);
+  } catch (err) {
+    logger.error(`📧 Failed to send invoice email: ${err.message}`);
+  }
+};
+
 export const createCheckoutSession = async (req, res, next) => {
   try {
     if (!isWithinPaymentISTWindow()) {
@@ -39,11 +100,37 @@ export const createCheckoutSession = async (req, res, next) => {
       return next(new AppError('Invalid subscription plan. Free plan requires no payment.', 400));
     }
 
+    // ── DEV MODE: If Stripe keys are not configured, simulate the payment ──
     const priceId = planPrices[plan];
-    if (!priceId) {
-      return next(new AppError('Payment configuration error. Price ID not set on server.', 500));
+    if (!stripe || !priceId) {
+      logger.warn(`⚠️ Stripe not configured — simulating ${plan} upgrade for user ${req.user.id}`);
+      
+      const user = await User.findById(req.user.id);
+      if (!user) return next(new AppError('User not found', 404));
+
+      const transactionId = `DEV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+      user.subscriptionPlan = plan;
+      await user.save({ validateBeforeSave: false });
+
+      // Send invoice email (will log to console if SMTP not configured)
+      await sendInvoiceEmail(user, plan, transactionId);
+
+      return res.status(200).json({
+        status: 'success',
+        success: true,
+        devInvoice: {
+          plan,
+          price: planPricing[plan],
+          transactionId,
+          date: new Date().toLocaleDateString(),
+          customerEmail: user.email
+        },
+        message: `[DEV MODE] Successfully upgraded to ${plan}. Stripe keys not configured.`
+      });
     }
 
+    // ── PRODUCTION: Real Stripe Checkout ──
     // Server-side validation of price/plan - we NEVER trust frontend price!
     // Stripe calculates price based on the priceId.
 
@@ -77,6 +164,11 @@ export const createCheckoutSession = async (req, res, next) => {
 
 // Stripe Webhook Handler - MUST use express.raw({type: 'application/json'})
 export const handleStripeWebhook = async (req, res, next) => {
+  if (!stripe) {
+    logger.warn('Stripe webhook received but Stripe is not configured. Ignoring.');
+    return res.status(200).send('OK - Stripe not configured');
+  }
+
   const sig = req.headers['stripe-signature'];
   let event;
 
@@ -105,7 +197,9 @@ export const handleStripeWebhook = async (req, res, next) => {
         
         logger.info(`✅ User ${user.email} successfully upgraded to ${plan} plan.`);
         
-        // In a real app, send Invoice Email here via NodeMailer/SendGrid
+        // Send invoice email
+        const transactionId = session.id || session.subscription;
+        await sendInvoiceEmail(user, plan, transactionId);
       }
     }
 

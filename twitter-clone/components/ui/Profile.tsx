@@ -40,6 +40,8 @@ import {
   requestPermission,
   getUserNotifPref,
   setUserNotifPref,
+  syncNotifPrefToBackend,
+  loadNotifPrefFromUser,
   TRACKED_KEYWORDS,
 } from "@/lib/notificationService";
 
@@ -90,12 +92,14 @@ export default function Profile({ onBack }: ProfileProps) {
     const supported = isNotificationSupported();
     setNotifSupported(supported);
     if (supported) {
-      setNotifPref(getUserNotifPref());
+      // Load preference from backend user profile first, fallback to localStorage
+      const pref = loadNotifPrefFromUser(user as any);
+      setNotifPref(pref);
       setNotifPermission(getPermissionState());
     } else {
       setNotifPermission("unsupported");
     }
-  }, []);
+  }, [user]);
 
   /**
    * Handles toggling the notification preference.
@@ -115,6 +119,7 @@ export default function Profile({ onBack }: ProfileProps) {
       // Turning OFF — straightforward
       setUserNotifPref(false);
       setNotifPref(false);
+      syncNotifPrefToBackend(false); // persist to MongoDB
       return;
     }
 
@@ -133,6 +138,7 @@ export default function Profile({ onBack }: ProfileProps) {
       setUserNotifPref(true);
       setNotifPref(true);
       setNotifPermission("granted");
+      syncNotifPrefToBackend(true); // persist to MongoDB
       return;
     }
 
@@ -144,10 +150,12 @@ export default function Profile({ onBack }: ProfileProps) {
       if (result === "granted") {
         setUserNotifPref(true);
         setNotifPref(true);
+        syncNotifPrefToBackend(true); // persist to MongoDB
       } else {
         // User denied the prompt — respect their choice
         setUserNotifPref(false);
         setNotifPref(false);
+        syncNotifPrefToBackend(false); // persist to MongoDB
       }
     } finally {
       setNotifLoading(false);
