@@ -108,7 +108,7 @@ export default function LoginVerifyModal({
         otp: fullOtp
       });
 
-      if (res.data.success) {
+      if (res.data.success || res.data.status === 'success') {
         if (timerRef.current) clearInterval(timerRef.current);
         onSuccess();
       }

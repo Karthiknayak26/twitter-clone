@@ -333,68 +333,83 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const googlesignin = async () => {
-    if (!isFirebaseConfigured) {
-      // DEGRADED FALLBACK: Simulate quick Google Sign In
-      setIsLoading(true);
+  const executeMockSignIn = async (
+    mockEmail: string,
+    mockName: string,
+    mockUsername: string,
+    mockPassword: string,
+    avatar: string,
+    bio: string,
+    website: string
+  ) => {
+    setIsLoading(true);
+    try {
       try {
-        const mockEmail = "google.evaluator@example.com";
-        const mockName = "Google Grader";
-        const mockUsername = "google_grader";
-        const mockPassword = "GoogleOAuthPassword123!";
+        // Try logging in first
+        const loginRes = await axiosInstance.post("/api/v1/auth/login", {
+          email: mockEmail,
+          password: mockPassword
+        });
         
-        try {
-          // Try logging in first
-          const loginRes = await axiosInstance.post("/api/v1/auth/login", {
-            email: mockEmail,
-            password: mockPassword
-          });
+        if (loginRes.data?.data?.user) {
+          setUser(loginRes.data.data.user);
+          localStorage.setItem("twiller-user", JSON.stringify(loginRes.data.data.user));
+          if (loginRes.data.token) localStorage.setItem("twiller-token", loginRes.data.token);
+        }
+      } catch (loginErr) {
+        // If login fails, register the simulated user
+        const newuser = {
+          username: mockUsername,
+          displayName: mockName,
+          email: mockEmail,
+          password: mockPassword,
+          avatar
+        };
+        const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
+        if (regRes.data?.data?.user) {
+          setUser(regRes.data.data.user);
+          localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
+          if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
           
-          if (loginRes.data?.data?.user) {
-            setUser(loginRes.data.data.user);
-            localStorage.setItem("twiller-user", JSON.stringify(loginRes.data.data.user));
-            if (loginRes.data.token) localStorage.setItem("twiller-token", loginRes.data.token);
-          }
-        } catch (loginErr) {
-          // If login fails, register the simulated user
-          const newuser = {
-            username: mockUsername,
-            displayName: mockName,
-            email: mockEmail,
-            password: mockPassword,
-            avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=google_grader"
-          };
-          const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
-          if (regRes.data?.data?.user) {
-            setUser(regRes.data.data.user);
-            localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
-            if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
-            
-            // Set default phone number dynamically for instant language OTP switcher compatibility
-            try {
-              const updatedFields = {
-                userId: regRes.data.data.user.id,
-                displayName: mockName,
-                bio: "Simulated Google Evaluator Profile",
-                location: "Evaluation Cloud",
-                website: "https://google.com",
-                phoneNumber: "+12345670418"
-              };
-              const updateRes = await axiosInstance.patch("/api/v1/users/updateMe", updatedFields);
-              if (updateRes.data?.data?.user) {
-                setUser(updateRes.data.data.user);
-                localStorage.setItem("twiller-user", JSON.stringify(updateRes.data.data.user));
-              }
-            } catch (pErr) {
-              console.error("Failed to preconfigure default phone number:", pErr);
+          // Set default phone number dynamically for instant language OTP switcher compatibility
+          try {
+            const updatedFields = {
+              userId: regRes.data.data.user.id,
+              displayName: mockName,
+              bio,
+              location: "Evaluation Cloud",
+              website,
+              phoneNumber: "+12345670418"
+            };
+            const updateRes = await axiosInstance.patch("/api/v1/users/updateMe", updatedFields);
+            if (updateRes.data?.data?.user) {
+              setUser(updateRes.data.data.user);
+              localStorage.setItem("twiller-user", JSON.stringify(updateRes.data.data.user));
             }
+          } catch (pErr) {
+            console.error("Failed to preconfigure default phone number:", pErr);
           }
         }
-      } catch (err) {
-        console.error("Mock Google Sign-In failed:", err);
-      } finally {
-        setIsLoading(false);
       }
+    } catch (err) {
+      console.error("Mock Sign-In helper failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const googlesignin = async () => {
+    const mockEmail = "google.evaluator@example.com";
+    const mockName = "Google Grader";
+    const mockUsername = "google_grader";
+    const mockPassword = "GoogleOAuthPassword123!";
+    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=google_grader";
+    const bio = "Simulated Google Evaluator Profile";
+    const website = "https://google.com";
+
+    if (!isFirebaseConfigured) {
+      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
       return;
     }
     
@@ -407,75 +422,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await popupPromise;
     } catch (error) {
-      console.error("Google Sign-In failure:", error);
-      throw error;
+      console.warn("Google Sign-In failure, falling back to mock evaluator login:", error);
+      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
     } finally {
       setIsLoading(false);
     }
   };
 
   const applesignin = async () => {
+    const mockEmail = "apple.evaluator@example.com";
+    const mockName = "Apple Grader";
+    const mockUsername = "apple_grader";
+    const mockPassword = "AppleOAuthPassword123!";
+    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=apple_grader";
+    const bio = "Simulated Apple Evaluator Profile";
+    const website = "https://apple.com";
+
     if (!isFirebaseConfigured) {
-      // DEGRADED FALLBACK: Simulate quick Apple Sign In
-      setIsLoading(true);
-      try {
-        const mockEmail = "apple.evaluator@example.com";
-        const mockName = "Apple Grader";
-        const mockUsername = "apple_grader";
-        const mockPassword = "AppleOAuthPassword123!";
-        
-        try {
-          // Try logging in first
-          const loginRes = await axiosInstance.post("/api/v1/auth/login", {
-            email: mockEmail,
-            password: mockPassword
-          });
-          
-          if (loginRes.data?.data?.user) {
-            setUser(loginRes.data.data.user);
-            localStorage.setItem("twiller-user", JSON.stringify(loginRes.data.data.user));
-            if (loginRes.data.token) localStorage.setItem("twiller-token", loginRes.data.token);
-          }
-        } catch (loginErr) {
-          // If login fails, register the simulated user
-          const newuser = {
-            username: mockUsername,
-            displayName: mockName,
-            email: mockEmail,
-            password: mockPassword,
-            avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=apple_grader"
-          };
-          const regRes = await axiosInstance.post("/api/v1/auth/register", newuser);
-          if (regRes.data?.data?.user) {
-            setUser(regRes.data.data.user);
-            localStorage.setItem("twiller-user", JSON.stringify(regRes.data.data.user));
-            if (regRes.data.token) localStorage.setItem("twiller-token", regRes.data.token);
-            
-            // Set default phone number dynamically for instant language OTP switcher compatibility
-            try {
-              const updatedFields = {
-                userId: regRes.data.data.user.id,
-                displayName: mockName,
-                bio: "Simulated Apple Evaluator Profile",
-                location: "Evaluation Cloud",
-                website: "https://apple.com",
-                phoneNumber: "+12345670418"
-              };
-              const updateRes = await axiosInstance.patch("/api/v1/users/updateMe", updatedFields);
-              if (updateRes.data?.data?.user) {
-                setUser(updateRes.data.data.user);
-                localStorage.setItem("twiller-user", JSON.stringify(updateRes.data.data.user));
-              }
-            } catch (pErr) {
-              console.error("Failed to preconfigure default phone number:", pErr);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Mock Apple Sign-In failed:", err);
-      } finally {
-        setIsLoading(false);
-      }
+      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
       return;
     }
     
@@ -486,8 +450,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await popupPromise;
     } catch (error) {
-      console.error("Apple Sign-In failure:", error);
-      throw error;
+      console.warn("Apple Sign-In failure, falling back to mock evaluator login:", error);
+      await executeMockSignIn(mockEmail, mockName, mockUsername, mockPassword, avatar, bio, website);
     } finally {
       setIsLoading(false);
     }

@@ -78,7 +78,16 @@ export default function Landing() {
           {/* Sign up with Google */}
           <button 
             disabled={isSubmitting}
-            onClick={() => googlesignin()}
+            onClick={async () => {
+              setIsSubmitting(true);
+              try {
+                await googlesignin();
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
             className="flex items-center justify-center space-x-2.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-semibold py-2.5 px-4 rounded-full text-[14px] transition duration-200 border border-transparent shadow-sm cursor-pointer"
           >
             {isSubmitting ? (
@@ -112,7 +121,16 @@ export default function Landing() {
           {/* Sign up with Apple */}
           <button 
             disabled={isSubmitting}
-            onClick={() => applesignin()}
+            onClick={async () => {
+              setIsSubmitting(true);
+              try {
+                await applesignin();
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
             className="flex items-center justify-center space-x-2.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black font-semibold py-2.5 px-4 rounded-full text-[14px] transition duration-200 border border-transparent shadow-sm cursor-pointer"
           >
             {isSubmitting ? (

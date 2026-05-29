@@ -153,7 +153,7 @@ export const verifyLoginOtp = async (req, res, next) => {
     }
 
     await redisClient.del(redisKey);
-    return res.status(200).json({ status: 'success', message: 'OTP verified successfully.' });
+    return res.status(200).json({ success: true, status: 'success', message: 'OTP verified successfully.' });
   } catch (err) {
     next(err);
   }
