@@ -139,7 +139,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.error("Error synchronizing session with Express backend:", err);
           }
         } else {
-          setUser(null);
+          // If no Firebase user, check if we have a valid local storage session before setting to null
+          const savedUser = localStorage.getItem("twiller-user");
+          if (savedUser) {
+            try {
+              setUser(JSON.parse(savedUser));
+            } catch (pErr) {
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
         }
         setIsLoading(false);
       });
