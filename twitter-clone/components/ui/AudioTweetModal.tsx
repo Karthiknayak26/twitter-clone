@@ -543,7 +543,7 @@ export default function AudioTweetModal({ isOpen, onClose, onPostSuccess }: Audi
         <header className="px-5 py-4 border-b border-zinc-900 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Mic className="h-5 w-5 text-[#1d9bf0] animate-pulse" />
-            <h3 className="font-bold text-white text-base">{t("new_audio_tweet") || t("audio_tweet") || "New Audio Tweet"}</h3>
+            <h3 className="font-bold text-white text-base">{t("audio_tweet")}</h3>
           </div>
           
           <button 
