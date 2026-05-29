@@ -412,9 +412,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const googlesignin = async () => {
     const mockEmail = "google.evaluator@example.com";
     const mockName = "Google Grader";
-    const mockUsername = "google_grader";
+    const mockUsername = "googlegrader";
     const mockPassword = "GoogleOAuthPassword123!";
-    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=google_grader";
+    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=googlegrader";
     const bio = "Simulated Google Evaluator Profile";
     const website = "https://google.com";
 
@@ -424,9 +424,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const applesignin = async () => {
     const mockEmail = "apple.evaluator@example.com";
     const mockName = "Apple Grader";
-    const mockUsername = "apple_grader";
+    const mockUsername = "applegrader";
     const mockPassword = "AppleOAuthPassword123!";
-    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=apple_grader";
+    const avatar = "https://api.dicebear.com/7.x/adventurer/svg?seed=applegrader";
     const bio = "Simulated Apple Evaluator Profile";
     const website = "https://apple.com";
 
