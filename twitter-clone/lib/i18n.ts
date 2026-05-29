@@ -102,7 +102,15 @@ export const translations = {
     registered_email: "Registered Email",
     payment_window: "Payment Window",
     choose_posting_level: "Choose Premium Posting Level",
-    email_address: "Email Address"
+    email_address: "Email Address",
+    audio_guidelines: "Audio Guidelines",
+    recording_voice: "Recording voice...",
+    mic_access_desc: "Grant microphone access. Your stream is authenticated and secure.",
+    or_click_browse: "or click to browse local files",
+    caption_label: "Tweet Caption (Optional)",
+    caption_placeholder: "Describe your audio tweet...",
+    discard: "Discard Audio",
+    posting: "Posting Tweet..."
   },
   Spanish: {
     home: "Inicio",
@@ -204,7 +212,15 @@ export const translations = {
     registered_email: "Correo registrado",
     payment_window: "Ventana de pago",
     choose_posting_level: "Elegir nivel de publicación premium",
-    email_address: "Dirección de correo electrónico"
+    email_address: "Dirección de correo electrónico",
+    audio_guidelines: "Pautas de audio",
+    recording_voice: "Grabando voz...",
+    mic_access_desc: "Conceda acceso al micrófono. Su transmisión es autenticada y segura.",
+    or_click_browse: "o haga clic para explorar archivos locales",
+    caption_label: "Subtítulo del Tweet (Opcional)",
+    caption_placeholder: "Describa su tweet de audio...",
+    discard: "Descartar audio",
+    posting: "Publicando tweet..."
   },
   Hindi: {
     home: "मुख्य पृष्ठ",
@@ -306,7 +322,15 @@ export const translations = {
     registered_email: "पंजीकृत ईमेल",
     payment_window: "भुगतान समय",
     choose_posting_level: "प्रीमियम पोस्टिंग स्तर चुनें",
-    email_address: "ईमेल पता"
+    email_address: "ईमेल पता",
+    audio_guidelines: "ऑडियो दिशानिर्देश",
+    recording_voice: "आवाज रिकॉर्ड की जा रही है...",
+    mic_access_desc: "माइक्रोफ़ोन एक्सेस प्रदान करें। आपका स्ट्रीम प्रमाणित और सुरक्षित है।",
+    or_click_browse: "या स्थानीय फ़ाइलों को खोजने के लिए क्लिक करें",
+    caption_label: "ट्वीट विवरण (वैकल्पिक)",
+    caption_placeholder: "अपने ऑडियो ट्वीट का वर्णन करें...",
+    discard: "ऑडियो खारिज करें",
+    posting: "ट्वीट पोस्ट किया जा रहा है..."
   },
   Portuguese: {
     home: "Início",
@@ -408,7 +432,15 @@ export const translations = {
     registered_email: "E-mail registrado",
     payment_window: "Janela de pagamento",
     choose_posting_level: "Escolha o nível de postagem premium",
-    email_address: "Endereço de e-mail"
+    email_address: "Endereço de e-mail",
+    audio_guidelines: "Diretrizes de áudio",
+    recording_voice: "Gravando voz...",
+    mic_access_desc: "Conceda acesso ao microfone. Sua transmissão é autenticada e segura.",
+    or_click_browse: "ou clique para navegar pelos arquivos locais",
+    caption_label: "Legenda do Tweet (Opcional)",
+    caption_placeholder: "Descreva seu tweet de áudio...",
+    discard: "Descartar áudio",
+    posting: "Postando tweet..."
   },
   Chinese: {
     home: "首页",
@@ -510,7 +542,15 @@ export const translations = {
     registered_email: "注册邮箱",
     payment_window: "支付时间段",
     choose_posting_level: "选择高级发布级别",
-    email_address: "电子邮件地址"
+    email_address: "电子邮件地址",
+    audio_guidelines: "音频指南",
+    recording_voice: "正在录音...",
+    mic_access_desc: "授予麦克风权限。您的流是经过身份验证且安全的。",
+    or_click_browse: "或点击浏览本地文件",
+    caption_label: "推文标题（可选）",
+    caption_placeholder: "描述您的语音推文...",
+    discard: "放弃音频",
+    posting: "正在发布推文..."
   },
   French: {
     home: "Accueil",
@@ -612,7 +652,15 @@ export const translations = {
     registered_email: "E-mail enregistré",
     payment_window: "Plage de paiement",
     choose_posting_level: "Choisir le niveau de publication premium",
-    email_address: "Adresse e-mail"
+    email_address: "Adresse e-mail",
+    audio_guidelines: "Directives audio",
+    recording_voice: "Enregistrement de la voix...",
+    mic_access_desc: "Accordez l'accès au microphone. Votre flux est authentifié et sécurisé.",
+    or_click_browse: "ou cliquez pour parcourir les fichiers locaux",
+    caption_label: "Légende du Tweet (Optionnel)",
+    caption_placeholder: "Décrivez votre tweet audio...",
+    discard: "Abandonner l'audio",
+    posting: "Publication du tweet..."
   }
 };
 
